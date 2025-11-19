@@ -1,0 +1,17 @@
+// Draw lines and change line thickness.
+function Main() : int {
+  LineColor("#000080"); // Dark Blue line
+  LineWidth(8);
+  Line(10, 210, 190, 390);
+  Line(190, 210, 10, 390);
+  LineColor("#800000"); // Dark Red line
+  LineWidth(4);
+  Line(210, 210, 390, 390);
+  Line(390, 210, 210, 390);
+  LineColor("#008000"); // Dark Green line
+  LineWidth(12);
+  Line(410, 210, 590, 390);
+  Line(590, 210, 410, 390);
+  SetTitle("Test: Three X's in different colors and thicknesses");
+  return 0;
+}

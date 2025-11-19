@@ -1,0 +1,5 @@
+// Test that Main is called properly and set the title.
+function Main() : int {
+  SetTitle("Test Worked!");
+  return 0;
+}

@@ -1,0 +1,22 @@
+// Modularize drawings.
+function DrawX(int x, int y, int size, int line_width, string color) : int { 
+  LineColor(color);
+  LineWidth(line_width);
+  Line(x, y, x+size, y+size);
+  Line(x+size, y, x, y+size);
+  return 0;
+}
+function Main() : int {
+  DrawX(10,  10, 180, 8, "#000080");
+  DrawX(210, 10, 180, 4, "#800000");
+  DrawX(410, 10, 180, 12, "#008000");
+
+  DrawX(10,  300, 80, 6, "orange");
+  DrawX(110, 300, 80, 5, "purple");
+  DrawX(210, 300, 80, 4, "yellow");
+  DrawX(310, 300, 80, 3, "pink");
+  DrawX(410, 300, 80, 2, "brown");
+  DrawX(510, 300, 80, 1, "gray");
+  SetTitle("Test: Call function to make lots of X's in different sizes, colors and thicknesses");
+  return 0;
+}

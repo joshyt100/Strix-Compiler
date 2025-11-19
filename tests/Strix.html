@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Strix → WAT/WASM Runner</title>
+
+  <style>
+    :root { --gap: 12px; }
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      margin: 0;
+      color: #111;
+      background: #f7f7f7;
+    }
+    header { padding: 16px 20px; background: #1f2937; color: #f9fafb; display:flex; align-items:center; gap:12px; }
+    header h1 { font-size: 18px; margin: 0; font-weight: 600; }
+    main { display: grid; grid-template-columns: 1fr 320px; gap: var(--gap); padding: var(--gap); }
+    .panel { background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); padding: 12px; }
+    #canvas-wrap {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #stage {
+      display: block;
+      background: #ddd;
+      border-radius: 8px;
+      box-shadow: inset 0 0 0 1px #e5e7eb; }
+    #ui { display: flex; flex-direction: column; gap: 10px; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .row label { font-size: 12px; color: #374151; }
+    input[type="file"], button, select, input[type="number"], input[type="text"] {
+      font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid #d1d5db; background: #fff;
+    }
+    button.primary { background: #111827; color: white; border: none; }
+    #buttons { display: flex; flex-direction: column; gap: 8px; }
+    .dyn-button {
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #d1d5db;
+      background: #f3f4f6;
+      cursor: pointer;
+      text-align: left; }
+    .dyn-button:hover { background: #e5e7eb; }
+    .muted { color: #6b7280; font-size: 12px; }
+    #log {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      height: 140px;
+      overflow: auto;
+      background: #0b1020;
+      color: #e5e7eb;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Strix → WAT/WASM Runner</h1>
+    <span class="muted">Load your compiled <code>.wasm</code>, then the page will call <code>Main()</code>.</span>
+  </header>
+
+  <main>
+    <section class="panel" id="canvas-wrap">
+      <canvas id="stage" width="600" height="600"></canvas>
+    </section>
+
+    <aside class="panel">
+      <div id="ui">
+        <div class="row">
+          <span id="programTitle">Untitled</span>
+        </div>
+        <div class="row">
+          <label for="wasmFile">WASM file:</label>
+          <input type="file" id="wasmFile" accept=".wasm" />
+          <button id="loadBtn" class="primary">Load & Run</button>
+        </div>
+        <div class="row">
+          <label>Canvas size:</label>
+          <input type="number" id="w" value="600" min="1" step="1" style="width: 60px;" />
+          ×
+          <input type="number" id="h" value="600" min="1" step="1" style="width: 60px;" />
+          <button id="resizeBtn">Resize</button>
+          <button id="clearBtn">Clear</button>
+        </div>
+        <div class="row">
+          <label>Dynamic Buttons</label>
+        </div>
+        <div id="buttons"></div>
+        <div class="row">
+          <button id="animToggle" disabled>▶︎ Play</button>
+          <span class="muted">Animation control</span>
+        </div>
+        <div class="row">
+          <span id="memLabel" class="muted">Memory Used: (no program loaded)</span>
+        </div>        <div>
+        <div class="row"><label>Log:</label></div>
+          <pre id="log"></pre>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    // ---------- Logging ----------
+    const logEl = document.getElementById('log');
+    function log(msg) {
+      logEl.textContent += `${new Date().toLocaleTimeString()}  ${msg}
+`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // ---------- Canvas ----------
+    const canvas = document.getElementById('stage');
+    const ctx = canvas.getContext('2d');
+    function resizeCanvas(w, h) {
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.font = '20px sans-serif';
+      ctx.textBaseline = 'top';
+      ctx.textAlign = 'left';
+        log(`Canvas set to ${w}×${h}`);
+    }
+
+    // ---------- Program cleanup state ----------
+    const cleanup = {
+      keyHandlers: [],
+      canvasHandlers: [],
+      rafId: 0,
+      animRunning: false,
+      animFuncName: null,
+      lastTs: 0,
+      memTimerId: 0
+    };
+    function resetProgram() {
+      // Remove prior key handlers
+      for (const h of cleanup.keyHandlers) {
+        window.removeEventListener('keydown', h);
+      }
+      for (const {type, handler} of cleanup.canvasHandlers) {
+        canvas.removeEventListener(type, handler);
+      }
+      cleanup.canvasHandlers.length = 0;
+      cleanup.keyHandlers.length = 0;
+      // Cancel any animation loop
+      if (cleanup.rafId) {
+        cancelAnimationFrame(cleanup.rafId);
+        cleanup.rafId = 0;
+      }
+      cleanup.animRunning = false;
+      cleanup.animFuncName = null;
+      cleanup.lastTs = 0;
+
+      // Reset UI
+      const animBtn = document.getElementById('animToggle');
+      animBtn.textContent = '▶︎ Play';
+      animBtn.disabled = true;
+      // Remove dynamic buttons
+      document.getElementById('buttons').innerHTML = '';
+
+      // Cancel memory usage timer
+      if (cleanup.memTimerId) {
+        clearInterval(cleanup.memTimerId);
+        cleanup.memTimerId = 0;
+      }
+      // Reset memory label
+      const memLabel = document.getElementById('memLabel');
+      if (memLabel) memLabel.textContent = 'Memory Used: (no program loaded)';
+
+      log('Previous program state cleared.');
+    }
+
+    // Initial canvas size
+    resizeCanvas(600, 600);
+
+    // ---------- UI wiring ----------
+    document.getElementById('resizeBtn').addEventListener('click', () => {
+      const w = parseInt(document.getElementById('w').value, 10) || 600;
+      const h = parseInt(document.getElementById('h').value, 10) || 600;
+      resizeCanvas(w, h);
+    });
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    });
+
+    const animBtn = document.getElementById('animToggle');
+    animBtn.addEventListener('click', () => {
+      if (!cleanup.animFuncName) return;
+      if (cleanup.animRunning) {
+        // Pause
+        if (cleanup.rafId) cancelAnimationFrame(cleanup.rafId);
+        cleanup.rafId = 0;
+        cleanup.animRunning = false;
+        animBtn.textContent = '▶︎ Play';
+        log('Animation paused');
+      } else {
+        // Resume
+        const tick = (ts) => {
+          if (!cleanup.animRunning) return;
+          const f = wasm.instance.exports[cleanup.animFuncName];
+          const last = cleanup.lastTs || ts;
+          const dtSec = (ts - last) / 1000;
+          cleanup.lastTs = ts;
+          if (typeof f === 'function') {
+            try { f(dtSec); } catch (e) { log(`Exception in ${cleanup.animFuncName}: ${e}`); }
+          }
+          cleanup.rafId = requestAnimationFrame(tick);
+        };
+        cleanup.animRunning = true;
+        animBtn.textContent = '⏸︎ Pause';
+        cleanup.lastTs = 0; // first dt is 0
+        cleanup.rafId = requestAnimationFrame(tick);
+        log('Animation resumed');
+      }
+    });
+
+    // ---------- WASM helpers ----------
+    const decoder = new TextDecoder('utf-8');
+    let wasm = null; // { instance, module }
+
+    function memU8() {
+      return new Uint8Array(wasm.instance.exports.memory.buffer);
+    }
+    function readCString(ptr) {
+      const view = memU8();
+      if (ptr == null || ptr < 0 || ptr >= view.length) return '';
+      let end = ptr;
+      while (end < view.length && view[end] !== 0) end++;
+      return decoder.decode(view.subarray(ptr, end));
+    }
+
+    function canvasXY(ev) {
+      const rect = canvas.getBoundingClientRect();
+      // These are CSS pixels; the drawing context is scaled to match
+      const x = Math.round(ev.clientX - rect.left);
+      const y = Math.round(ev.clientY - rect.top);
+      return [x|0, y|0];
+    }
+
+    // ---------- Host imports ----------
+    const host = {
+      // UI Triggers
+      setTitle(titlePtr) {
+        const title = readCString(titlePtr);
+        document.getElementById('programTitle').textContent = title || "Untitled";
+        log(`Title set to: "${title}"`);
+      },
+      addButton(labelPtr, funcNamePtr) {
+        const label = readCString(labelPtr);
+        const funcName = readCString(funcNamePtr);
+        const btn = document.createElement('button');
+        btn.className = 'dyn-button';
+        btn.textContent = label || '[unnamed]';
+        btn.addEventListener('click', () => {
+          const f = wasm.instance.exports[funcName];
+          if (typeof f === 'function') {
+            try { f(); } catch (e) { log(`Exception in ${funcName}: ${e}`); }
+          } else {
+            log(`No exported function named ${funcName}`);
+          }
+        });
+        document.getElementById('buttons').appendChild(btn);
+        log(`Button created → ${label} → ${funcName}()`);
+      },
+      addKeyTrigger(keyPtr, funcNamePtr) {
+        const key = readCString(keyPtr);
+        const funcName = readCString(funcNamePtr);
+        const handler = (ev) => {
+          if (ev.key === key) {
+            const f = wasm.instance.exports[funcName];
+            if (typeof f === 'function') {
+              try { f(); } catch (e) { log(`Exception in ${funcName}: ${e}`); }
+            } else {
+              log(`No exported function named ${funcName}`);
+            }
+          }
+        };
+        window.addEventListener('keydown', handler);
+        cleanup.keyHandlers.push(handler);
+        log(`Key trigger added → key "${key}" → ${funcName}()`);
+      },
+
+      // Canvas interaction hooks (pass i32 x,y)
+      addClickFun(funcNamePtr) {
+        const funcName = readCString(funcNamePtr);
+        const handler = (ev) => {
+          const [x, y] = canvasXY(ev);
+          const f = wasm.instance.exports[funcName];
+          if (typeof f === 'function') {
+            try { f(x, y); } catch (e) { log(`Exception in ${funcName}: ${e}`); }
+          } else {
+            log(`No exported function named ${funcName}`);
+          }
+        };
+        canvas.addEventListener('click', handler);
+        cleanup.canvasHandlers.push({type: 'click', handler});
+        log(`Canvas click handler → ${funcName}(x:i32, y:i32)`);
+      },
+
+      addMoveFun(funcNamePtr) {
+        const funcName = readCString(funcNamePtr);
+        const handler = (ev) => {
+          const [x, y] = canvasXY(ev);
+          const f = wasm.instance.exports[funcName];
+          if (typeof f === 'function') {
+            // Avoid log spam on high-frequency moves
+            try { f(x, y); } catch (e) {}
+          }
+        };
+        canvas.addEventListener('mousemove', handler);
+        cleanup.canvasHandlers.push({type: 'mousemove', handler});
+        log(`Canvas move handler → ${funcName}(x:i32, y:i32)`);
+      },
+
+      // Animation loop: repeatedly call exported function with dt (seconds: f64)
+      addAnimFun(funcNamePtr) {
+        const funcName = readCString(funcNamePtr);
+        // Stop any previous loop
+        if (cleanup.rafId) {
+          cancelAnimationFrame(cleanup.rafId);
+          cleanup.rafId = 0;
+        }
+        cleanup.animFuncName = funcName;
+        cleanup.lastTs = 0;
+        const tick = (ts) => {
+          if (!cleanup.animRunning) return;
+          const f = wasm.instance.exports[funcName];
+          const last = cleanup.lastTs || ts;
+          const dtSec = (ts - last) / 1000;
+          cleanup.lastTs = ts;
+          if (typeof f === 'function') {
+            try { f(dtSec); } catch (e) { log(`Exception in ${funcName}: ${e}`); }
+          } else {
+            log(`No exported function named ${funcName}`);
+          }
+          cleanup.rafId = requestAnimationFrame(tick);
+        };
+        cleanup.animRunning = true;
+        const btn = document.getElementById('animToggle');
+        btn.disabled = false;
+        btn.textContent = '⏸︎ Pause';
+        cleanup.rafId = requestAnimationFrame(tick);
+        log(`Animation loop started → ${funcName}(dt_seconds:f64)`);
+      },
+
+      // Drawing state
+      setStrokeColor(colorPtr) { ctx.strokeStyle = readCString(colorPtr) || '#000'; },
+      setFillColor(colorPtr)   { ctx.fillStyle   = readCString(colorPtr) || '#000'; },
+      setLineWidth(w)          { ctx.lineWidth   = Math.max(1, w|0); },
+
+      // Primitives
+      drawLine(x1, y1, x2, y2) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); },
+      drawRect(x, y, w, h)     { ctx.strokeRect(x, y, w, h); ctx.fillRect(x, y, w, h); },
+      drawCircle(cx, cy, r)    { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); },
+      drawText(x, y, font_size, textPtr)  {
+        const s = readCString(textPtr);
+        ctx.font = font_size + 'px sans-serif';
+        ctx.fillText(s, x, y);
+        // log(`Outputting text "${s}".`);
+      },
+
+      // Utilities
+      clear() { ctx.clearRect(0, 0, canvas.width, canvas.height); },
+      setCanvasSize(w, h) { resizeCanvas(w|0, h|0); }
+    };
+
+    function updateMemoryLabel() {
+      const memLabel = document.getElementById('memLabel');
+      if (!memLabel) return;
+      if (!wasm) { memLabel.textContent = 'Memory Used: (no program loaded)'; return; }
+
+      const memory = wasm.instance.exports.memory;
+      if (!memory) { memLabel.textContent = 'Memory Used: (no memory export)'; return; }
+
+      const totalBytes = memory.buffer.byteLength;
+      const totalKB = Math.round(totalBytes / 1024); // e.g., 640 for 10 pages
+
+      const freeExport = wasm.instance.exports.free_mem;
+      if (!(freeExport instanceof WebAssembly.Global)) {
+        memLabel.textContent = 'Export $free_mem to see memory used';
+        return;
+      }
+
+      const usedBytes = freeExport.value >>> 0;   // bump pointer
+      const percent = totalBytes ? Math.round((usedBytes * 100) / totalBytes) : 0;
+
+      memLabel.textContent = `Memory Used: ${percent}% (${usedBytes}/${totalKB}k)`;
+    }
+
+    // ---------- WASM loader ----------
+    async function loadFromFile(file) {
+      resetProgram();
+      const buf = await file.arrayBuffer();
+
+      const imports = {
+        host,
+        Math: { pow(x, y) { return Math.pow(x, y); } } // : (param f64 f64) (result f64)
+      };
+
+      const { instance, module } = await WebAssembly.instantiate(buf, imports);
+
+      wasm = { instance, module };
+      log('WASM loaded. Memory size (bytes): ' + instance.exports.memory.buffer.byteLength);
+
+      // Start periodic memory usage updates
+      updateMemoryLabel(); // one immediate update
+      if (cleanup.memTimerId) {
+        clearInterval(cleanup.memTimerId);
+      }
+      cleanup.memTimerId = setInterval(updateMemoryLabel, 500);
+
+      if (typeof instance.exports.Main === 'function') {
+        try { instance.exports.Main(); log('Called Main()'); } catch (e) { log('Exception in Main(): ' + e); }
+      } else {
+        log('No exported Main() found.');
+      }
+    }
+
+    document.getElementById('loadBtn').addEventListener('click', async () => {
+      const f = document.getElementById('wasmFile').files[0];
+      if (!f) { log('Select a .wasm file first.'); return; }
+      try { await loadFromFile(f); } catch (e) { log('Load failed: ' + e); }
+    });
+  </script>
+</body>
+</html>

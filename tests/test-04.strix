@@ -1,0 +1,8 @@
+// Draw a colorful circle.
+function Main() : int {
+  FillColor("blue");      // Regular blue fill
+  LineColor("#000080"); // Dark Blue line
+  SetTitle("Test: Blue circle with dark blue perimeter");
+  Circle(300, 300, 200);
+  return 0;
+}

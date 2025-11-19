@@ -1,0 +1,70 @@
+// Test Buttons
+int x_pos = 10;
+int y_pos = 10;
+int size = 80;
+
+// Draw an X in the next open space.
+function DrawX(string color) : int { 
+  LineColor(color);
+  LineWidth(4);
+  Line(x_pos,      y_pos, x_pos+size, y_pos+size);
+  Line(x_pos+size, y_pos, x_pos,      y_pos+size);
+
+  // Adjust position for next X.
+  x_pos = x_pos + size + 20;
+  if (x_pos + size > 600) {
+    x_pos = 10;
+    y_pos = y_pos + size + 20;
+  }
+  return 0;
+}
+
+function DrawScreen() : int {
+  LineColor("black");
+  FillColor("while");
+  LineWidth(4);
+  Rect(0,0,600,600);
+
+  DrawX("orange");
+  DrawX("purple");
+  DrawX("yellow");
+  DrawX("pink");
+  DrawX("brown");
+  DrawX("gray");
+
+  DrawX("#000080");
+  DrawX("#800000");
+  DrawX("#008000");
+
+  return 0;
+}
+
+function IncSize() : int {
+  x_pos = 10;
+  y_pos = 10;
+  size = size + 20;
+  if (size > 300) {
+    size = 300;
+  }
+  DrawScreen();
+  return 0;
+}
+
+function DecSize() : int {
+  x_pos = 10;
+  y_pos = 10;
+  size = size - 20;
+  if (size < 20) {
+    size = 20;
+  }
+  DrawScreen();
+  return 0;
+}
+
+function Main() : int {
+  SetTitle("Test: Buttons to modify the image.");
+  DrawScreen();
+  AddButton("Bigger!", "IncSize");
+  AddButton("Smaller!", "DecSize");
+  return 0;
+}

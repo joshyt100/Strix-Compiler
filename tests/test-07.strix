@@ -1,0 +1,35 @@
+// Test global variables.
+int x_pos = 10;
+int y_pos = 10;
+int size = 80;
+
+// Draw an X in the next open space.
+function DrawX(string color) : int { 
+  LineColor(color);
+  LineWidth(4);
+  Line(x_pos,      y_pos, x_pos+size, y_pos+size);
+  Line(x_pos+size, y_pos, x_pos,      y_pos+size);
+
+  // Adjust position for next X.
+  x_pos = x_pos + size + 20;
+  if (x_pos + size > 600) {
+    x_pos = 10;
+    y_pos = y_pos + size + 20;
+  }
+  return 0;
+}
+function Main() : int {
+  DrawX("orange");
+  DrawX("purple");
+  DrawX("yellow");
+  DrawX("pink");
+  DrawX("brown");
+  DrawX("gray");
+
+  DrawX("#000080");
+  DrawX("#800000");
+  DrawX("#008000");
+
+  SetTitle("Test: Use global variables to auto-place the next X.");
+  return 0;
+}

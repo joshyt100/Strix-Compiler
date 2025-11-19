@@ -1,0 +1,2251 @@
+(module
+  (import "Math" "pow" (func $pow (param f64 f64) (result f64)))
+  (import "host" "addButton"     (func $addButton  (param i32 i32)))    ;; (label_ptr, func_name_ptr) call on button click with no args
+  (import "host" "addKeyTrigger" (func $addKeyTrigger (param i32 i32))) ;; (key_ptr, func_name_ptr) call on keypress with no args
+  (import "host" "addAnimFun"    (func $addAnimFun (param i32)))        ;; (fun_name_ptr) to call with (time_diff:f64)
+  (import "host" "addClickFun"   (func $addClickFun (param i32)))       ;; (fun_name_ptr) to call with (x:i32, y:i32) on canvas click
+  (import "host" "addMoveFun"    (func $addMoveFun  (param i32)))       ;; (x, y) on mouse move
+
+  (import "host" "setTitle"       (func $setTitle       (param i32)))   ;; (program_name_ptr)
+  (import "host" "setStrokeColor" (func $setStrokeColor (param i32)))   ;; (color_ptr)  e.g., "red", "#ff0055"
+  (import "host" "setFillColor"   (func $setFillColor   (param i32)))   ;; (color_ptr)
+  (import "host" "setLineWidth"   (func $setLineWidth   (param i32)))   ;; pixels
+
+  (import "host" "drawLine"   (func $drawLine   (param i32 i32 i32 i32))) ;; x1 y1 x2 y2
+  (import "host" "drawRect"   (func $drawRect   (param i32 i32 i32 i32))) ;; x y w h (does fill + stroke)
+  (import "host" "drawCircle" (func $drawCircle (param i32 i32 i32)))     ;; cx cy r
+  (import "host" "drawText"   (func $drawText   (param i32 i32 i32 i32))) ;; x y font_size text_ptr
+
+  (import "host" "clear"   (func $clear))
+  ;; Define a memory block with ten pages (640KB)
+  (memory (export "memory") 10)
+  (data (i32.const 0) "black\00#6e6a00ff\00#6e6a00d6\00#303030\00#808080\00green\00white\00blue\00red\00yellow\00You Win!\00Test: Continuous Animation\00s\00ActivateShield\00ArrowUp\00KeyUp\00ArrowLeft\00KeyLeft\00ArrowDown\00KeyDown\00ArrowRight\00KeyRight\00UpdateBoard\00")
+  (global $free_mem (mut i32) (i32.const 205))
+  (export "free_mem" (global $free_mem))
+  ;; GLOBAL VARIABLES
+  (global $var74 (mut i32) (i32.const 0))  ;; 'done'
+  (global $var25 (mut i32) (i32.const 0))  ;; 'flag1'
+  (global $var34 (mut i32) (i32.const 0))  ;; 'flag10'
+  (global $var59 (mut i32) (i32.const 0))  ;; 'flag10_x'
+  (global $var60 (mut i32) (i32.const 0))  ;; 'flag10_y'
+  (global $var35 (mut i32) (i32.const 0))  ;; 'flag11'
+  (global $var61 (mut i32) (i32.const 0))  ;; 'flag11_x'
+  (global $var62 (mut i32) (i32.const 0))  ;; 'flag11_y'
+  (global $var36 (mut i32) (i32.const 0))  ;; 'flag12'
+  (global $var63 (mut i32) (i32.const 0))  ;; 'flag12_x'
+  (global $var64 (mut i32) (i32.const 0))  ;; 'flag12_y'
+  (global $var37 (mut i32) (i32.const 0))  ;; 'flag13'
+  (global $var65 (mut i32) (i32.const 0))  ;; 'flag13_x'
+  (global $var66 (mut i32) (i32.const 0))  ;; 'flag13_y'
+  (global $var38 (mut i32) (i32.const 0))  ;; 'flag14'
+  (global $var67 (mut i32) (i32.const 0))  ;; 'flag14_x'
+  (global $var68 (mut i32) (i32.const 0))  ;; 'flag14_y'
+  (global $var39 (mut i32) (i32.const 0))  ;; 'flag15'
+  (global $var69 (mut i32) (i32.const 0))  ;; 'flag15_x'
+  (global $var70 (mut i32) (i32.const 0))  ;; 'flag15_y'
+  (global $var40 (mut i32) (i32.const 0))  ;; 'flag16'
+  (global $var71 (mut i32) (i32.const 0))  ;; 'flag16_x'
+  (global $var72 (mut i32) (i32.const 0))  ;; 'flag16_y'
+  (global $var41 (mut i32) (i32.const 0))  ;; 'flag1_x'
+  (global $var42 (mut i32) (i32.const 0))  ;; 'flag1_y'
+  (global $var26 (mut i32) (i32.const 0))  ;; 'flag2'
+  (global $var43 (mut i32) (i32.const 0))  ;; 'flag2_x'
+  (global $var44 (mut i32) (i32.const 0))  ;; 'flag2_y'
+  (global $var27 (mut i32) (i32.const 0))  ;; 'flag3'
+  (global $var45 (mut i32) (i32.const 0))  ;; 'flag3_x'
+  (global $var46 (mut i32) (i32.const 0))  ;; 'flag3_y'
+  (global $var28 (mut i32) (i32.const 0))  ;; 'flag4'
+  (global $var47 (mut i32) (i32.const 0))  ;; 'flag4_x'
+  (global $var48 (mut i32) (i32.const 0))  ;; 'flag4_y'
+  (global $var29 (mut i32) (i32.const 0))  ;; 'flag5'
+  (global $var49 (mut i32) (i32.const 0))  ;; 'flag5_x'
+  (global $var50 (mut i32) (i32.const 0))  ;; 'flag5_y'
+  (global $var30 (mut i32) (i32.const 0))  ;; 'flag6'
+  (global $var51 (mut i32) (i32.const 0))  ;; 'flag6_x'
+  (global $var52 (mut i32) (i32.const 0))  ;; 'flag6_y'
+  (global $var31 (mut i32) (i32.const 0))  ;; 'flag7'
+  (global $var53 (mut i32) (i32.const 0))  ;; 'flag7_x'
+  (global $var54 (mut i32) (i32.const 0))  ;; 'flag7_y'
+  (global $var32 (mut i32) (i32.const 0))  ;; 'flag8'
+  (global $var55 (mut i32) (i32.const 0))  ;; 'flag8_x'
+  (global $var56 (mut i32) (i32.const 0))  ;; 'flag8_y'
+  (global $var33 (mut i32) (i32.const 0))  ;; 'flag9'
+  (global $var57 (mut i32) (i32.const 0))  ;; 'flag9_x'
+  (global $var58 (mut i32) (i32.const 0))  ;; 'flag9_y'
+  (global $var73 (mut i32) (i32.const 0))  ;; 'flag_size'
+  (global $var7 (mut i32) (i32.const 0))  ;; 'item1_accel'
+  (global $var6 (mut i32) (i32.const 0))  ;; 'item1_size'
+  (global $var4 (mut i32) (i32.const 0))  ;; 'item1_x'
+  (global $var5 (mut i32) (i32.const 0))  ;; 'item1_y'
+  (global $var11 (mut i32) (i32.const 0))  ;; 'item2_accel'
+  (global $var10 (mut i32) (i32.const 0))  ;; 'item2_size'
+  (global $var8 (mut i32) (i32.const 0))  ;; 'item2_x'
+  (global $var9 (mut i32) (i32.const 0))  ;; 'item2_y'
+  (global $var15 (mut i32) (i32.const 0))  ;; 'item3_accel'
+  (global $var14 (mut i32) (i32.const 0))  ;; 'item3_size'
+  (global $var12 (mut i32) (i32.const 0))  ;; 'item3_x'
+  (global $var13 (mut i32) (i32.const 0))  ;; 'item3_y'
+  (global $var19 (mut i32) (i32.const 0))  ;; 'item4_accel'
+  (global $var18 (mut i32) (i32.const 0))  ;; 'item4_size'
+  (global $var16 (mut i32) (i32.const 0))  ;; 'item4_x'
+  (global $var17 (mut i32) (i32.const 0))  ;; 'item4_y'
+  (global $var3 (mut i32) (i32.const 0))  ;; 'player_accel'
+  (global $var2 (mut i32) (i32.const 0))  ;; 'player_size'
+  (global $var0 (mut i32) (i32.const 0))  ;; 'player_x'
+  (global $var1 (mut i32) (i32.const 0))  ;; 'player_y'
+  (global $var22 (mut i32) (i32.const 0))  ;; 'shield_size'
+  (global $var20 (mut i32) (i32.const 0))  ;; 'shield_x'
+  (global $var21 (mut i32) (i32.const 0))  ;; 'shield_y'
+  (global $var23 (mut i32) (i32.const 0))  ;; 'vel_x'
+  (global $var24 (mut i32) (i32.const 0))  ;; 'vel_y'
+
+  ;; Function to swap the top two i32s on the stack.
+  (func $_swap32 (param $val1 i32) (param $val2 i32) (result i32) (result i32)
+    (local.get $val2)
+    (local.get $val1)
+  )
+
+  ;; Function to allocate a string; add one to size and place null there.
+  ;; Returns the memory position of the new string.
+  (func $_alloc_str (param $size i32) (result i32)
+    (local $null_pos i32) ;; Local variable to place null terminator.
+    (global.get $free_mem)                            ;; Old free mem is alloc start.
+    (global.get $free_mem)                            ;; Adjust new free mem.
+    (local.get $size)
+    (i32.add)
+    (local.set $null_pos)
+    (i32.store8 (local.get $null_pos) (i32.const 0))  ;; Place null terminator.
+    (i32.add (i32.const 1) (local.get $null_pos))
+    (global.set $free_mem)                            ;; Update free memory start.
+  )
+
+  ;; Convert a char to a string.
+  ;; Return a pointer to the new string.
+  (func $_char2str (param $char i32) (result i32)
+    (local $ptr i32)                                  ;; Allocated pointer
+    (call $_alloc_str (i32.const 1))                  ;; Allocate a string with one char.
+    (local.set $ptr)                                  ;; save the allocated position.
+    (i32.store8 (local.get $ptr) (local.get $char))   ;; Store the char.
+    (local.get $ptr)                                  ;; return the allocated position.
+  )
+
+  ;; Function to copy memory.  Args: [source] [destination] [size]
+  ;; No return value.
+  (func $_mem_copy (param $src i32) (param $dest i32) (param $size i32)
+    (loop $_mem_copy_loop
+      (if (i32.eqz (local.get $size)) (then (return)))
+
+      (local.get $dest)               ;; Specify location to place byte
+      (i32.load8_u (local.get $src))  ;; Load byte from source
+      (i32.store8)                    ;; Store byte
+
+      (local.set $src  (i32.add (local.get $src)  (i32.const 1))) ;; source++
+      (local.set $dest (i32.add (local.get $dest) (i32.const 1))) ;; destination++
+      (local.set $size (i32.sub (local.get $size) (i32.const 1))) ;; size--;
+
+      (br $_mem_copy_loop) ;; Go back to the start of the loop!
+    )
+  )
+
+  ;; Function to calculate the length of a string and return it (as i32).
+  (func $_strlen (param $ptr i32) (result i32)
+    (local $len i32) ;; Local variable to keep track of the length
+    (local.set $len (i32.const 0)) ;; Initialize the length to 0
+
+    ;; Loop through memory until the null terminator is found
+    (loop $strlen_loop
+      (i32.load8_u (local.get $ptr)) ;; Load byte at current pointer
+      (if (i32.eqz)                       ;; Test if null.
+        (then (local.get $len) (return))  ;; ...if so, return
+      )
+
+      ;; Increment pointer and length
+      (local.set $ptr (i32.add (local.get $ptr) (i32.const 1))) ;; ptr++
+      (local.set $len (i32.add (local.get $len) (i32.const 1))) ;; len++
+
+      (br $strlen_loop) ;; Keep going...
+    )
+    (local.get $len) ;; Return length
+  )
+
+  ;; Function to create make a series of copies of a string.
+  ;; $ptr is a pointer to the string to be duplicated.
+  ;; $dups is the number of copies to make.
+  ;; Returns the memory position of the duplate chain.
+  (func $_str_duplicate (param $ptr i32) (param $dups i32) (result i32)
+    (local $str_len i32)      ;; Length of the input string
+    (local $new_ptr i32)      ;; Pointer to the newly allocated memory
+    (local $dest i32)         ;; Pointer for writing to the new string
+    (local $i i32)            ;; Loop counter
+
+    ;; Step 1: Get the length of the input string
+    (local.get $ptr)
+    (call $_strlen)
+    (local.set $str_len)
+
+    ;; Step 2: Compute the total length of the new string and allocate it.
+    (i32.mul (local.get $str_len) (local.get $dups))
+    (call $_alloc_str)
+    (local.set $new_ptr)  ;; Store the pointer to the allocated memory
+
+    ;; Step 3: Initialize destination pointer
+    (local.set $dest (local.get $new_ptr))
+
+    ;; Step 4: Copy the input string `dups` times into the new memory
+    (local.set $i (i32.const 0)) ;; Initialize loop counter
+    (block $copy_block
+      (loop $copy_loop
+        ;; Check if $i >= $dups
+        (i32.ge_u (local.get $i) (local.get $dups))
+        (br_if $copy_block) ;; Exit loop if done
+
+        ;; Copy the input string to the current destination
+        (call $_mem_copy (local.get $ptr) (local.get $dest) (local.get $str_len))
+
+        ;; Update the destination pointer
+        (i32.add (local.get $dest) (local.get $str_len))
+        (local.set $dest)
+
+        ;; Increment loop counter
+        (i32.add (local.get $i) (i32.const 1))
+        (local.set $i)
+
+        ;; Repeat the loop
+        (br $copy_loop)
+      ) ;; end of $copy_loop
+    ) ;; end of $copy_block
+
+    (local.get $new_ptr) ;; Return pointer to new string.
+  )
+
+  ;; Function to concatenate two strings
+  ;; $ptr1 and $ptr2 are the pointers to the two strings to concatenate.
+  ;; Returns a pointer to the new, combined string.
+  (func $_str_concat (param $ptr1 i32) (param $ptr2 i32) (result i32)
+    (local $len1 i32)      ;; Length of the first string
+    (local $len2 i32)      ;; Length of the second string
+    (local $new_ptr i32)   ;; Pointer to the newly allocated string
+
+    ;; Step 1: Get the lengths of the two strings
+    (local.get $ptr1)
+    (call $_strlen)
+    (local.set $len1)
+
+    (local.get $ptr2)
+    (call $_strlen)
+    (local.set $len2)
+
+    ;; Step 2: Compute the total length of the new string and allocate memory
+    (i32.add (local.get $len1) (local.get $len2))
+    (call $_alloc_str)
+    (local.set $new_ptr)       ;; Store the pointer to the allocated memory
+
+    ;; Step 3: Copy the first string to the new memory
+    (local.get $ptr1)
+    (local.get $new_ptr)
+    (local.get $len1)
+    (call $_mem_copy)
+
+    ;; Step 4: Copy the second string to the new memory (after the first string)
+    (local.get $ptr2)
+    (i32.add (local.get $new_ptr) (local.get $len1))
+    (local.get $len2)
+    (call $_mem_copy)
+
+    ;; Step 5: Return the pointer to the new string
+    (local.get $new_ptr)
+  )
+
+  ;; Function to make a copy of a string and return its pointer.
+  (func $_str_copy (param $str i32) (result i32)
+    (local $size i32)                    ;; Var: Length of string to copy.
+    (local $new_ptr i32)                 ;; Var: Location of new string.
+    (call $_strlen (local.get $str))     ;; Calculate length of the string to copy.
+    (local.set $size)                    ;; Save the string length.
+    (call $_alloc_str (local.get $size)) ;; Allocate space for the new string.
+    (local.set $new_ptr)                 ;; Save pointer to new string.
+    ;; copy memory into the new string...
+    (call $_mem_copy (local.get $str) (local.get $new_ptr) (local.get $size))
+    (local.get $new_ptr)                 ;; Return the pointer to the new string.
+  )
+
+  (func $Fun0 (result i32)
+    ;; == If Condition ==
+    (global.get $var22)  ;; Variable 'shield_size'
+    (i32.const 0)  ;; Literal value
+    (i32.gt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; == Generate return code ==
+        (i32.const 0)  ;; Literal value
+        (return)
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; Calculate RHS for assignment.
+    (global.get $var0)  ;; Variable 'player_x'
+    (global.set $var20)  ;; Set variable 'shield_x'
+    ;; Calculate RHS for assignment.
+    (global.get $var1)  ;; Variable 'player_y'
+    (global.set $var21)  ;; Set variable 'shield_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 800)  ;; Literal value
+    (global.set $var22)  ;; Set variable 'shield_size'
+    ;; == Generate return code ==
+    (i32.const 1)  ;; Literal value
+    (return)
+  )
+  (func $Fun1 (result i32)
+    ;; Calculate RHS for assignment.
+    (i32.const 3000)  ;; Literal value
+    (global.set $var0)  ;; Set variable 'player_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 3000)  ;; Literal value
+    (global.set $var1)  ;; Set variable 'player_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 1000)  ;; Literal value
+    (global.set $var4)  ;; Set variable 'item1_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 1000)  ;; Literal value
+    (global.set $var5)  ;; Set variable 'item1_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 5000)  ;; Literal value
+    (global.set $var8)  ;; Set variable 'item2_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 1000)  ;; Literal value
+    (global.set $var9)  ;; Set variable 'item2_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 1000)  ;; Literal value
+    (global.set $var12)  ;; Set variable 'item3_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 5000)  ;; Literal value
+    (global.set $var13)  ;; Set variable 'item3_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 5000)  ;; Literal value
+    (global.set $var16)  ;; Set variable 'item4_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 5000)  ;; Literal value
+    (global.set $var17)  ;; Set variable 'item4_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var23)  ;; Set variable 'vel_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var24)  ;; Set variable 'vel_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var22)  ;; Set variable 'shield_size'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var25)  ;; Set variable 'flag1'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var26)  ;; Set variable 'flag2'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var27)  ;; Set variable 'flag3'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var28)  ;; Set variable 'flag4'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var29)  ;; Set variable 'flag5'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var30)  ;; Set variable 'flag6'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var31)  ;; Set variable 'flag7'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var32)  ;; Set variable 'flag8'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var33)  ;; Set variable 'flag9'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var34)  ;; Set variable 'flag10'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var35)  ;; Set variable 'flag11'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var36)  ;; Set variable 'flag12'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var37)  ;; Set variable 'flag13'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var38)  ;; Set variable 'flag14'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var39)  ;; Set variable 'flag15'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var40)  ;; Set variable 'flag16'
+    (call $Fun0)  ;; Call function ActivateShield
+    (drop) ;; Result not used.
+    ;; == Generate return code ==
+    (i32.const 0)  ;; Literal value
+    (return)
+  )
+  (func $Fun2 (param $var75 i32) (param $var76 i32) (param $var77 i32) (param $var78 i32) (param $var79 i32) (result i32)
+    (local $var80 i32) ;; Declare var 'max_sqr'
+    (local $var81 i32) ;; Declare var 'x_dist'
+    (local $var82 i32) ;; Declare var 'x_sqr'
+    (local $var83 i32) ;; Declare var 'y_dist'
+    (local $var84 i32) ;; Declare var 'y_sqr'
+    ;; Calculate RHS for assignment.
+    (local.get $var79)  ;; Variable 'max_dist'
+    (local.get $var79)  ;; Variable 'max_dist'
+    (i32.mul)
+    (local.set $var80)  ;; Set variable 'max_sqr'
+    ;; Calculate RHS for assignment.
+    (local.get $var75)  ;; Variable 'x1'
+    (local.get $var77)  ;; Variable 'x2'
+    (i32.sub)
+    (local.set $var81)  ;; Set variable 'x_dist'
+    ;; Calculate RHS for assignment.
+    (local.get $var81)  ;; Variable 'x_dist'
+    (local.get $var81)  ;; Variable 'x_dist'
+    (i32.mul)
+    (local.set $var82)  ;; Set variable 'x_sqr'
+    ;; Calculate RHS for assignment.
+    (local.get $var76)  ;; Variable 'y1'
+    (local.get $var78)  ;; Variable 'y2'
+    (i32.sub)
+    (local.set $var83)  ;; Set variable 'y_dist'
+    ;; Calculate RHS for assignment.
+    (local.get $var83)  ;; Variable 'y_dist'
+    (local.get $var83)  ;; Variable 'y_dist'
+    (i32.mul)
+    (local.set $var84)  ;; Set variable 'y_sqr'
+    ;; == Generate return code ==
+    (local.get $var80)  ;; Variable 'max_sqr'
+    (local.get $var82)  ;; Variable 'x_sqr'
+    (local.get $var84)  ;; Variable 'y_sqr'
+    (i32.add)
+    (i32.ge_s)
+    (return)
+  )
+  (func $Fun3 (param $var85 i32) (param $var86 i32) (param $var87 i32) (param $var88 i32) (param $var89 i32) (param $var90 i32) (result i32)
+    ;; == If Condition ==
+    (local.get $var87)  ;; Variable 'r1'
+    (i32.const 0)  ;; Literal value
+    (i32.le_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; == Generate return code ==
+        (i32.const 0)  ;; Literal value
+        (return)
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (local.get $var90)  ;; Variable 'r2'
+    (i32.const 0)  ;; Literal value
+    (i32.le_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; == Generate return code ==
+        (i32.const 0)  ;; Literal value
+        (return)
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == Generate return code ==
+    (local.get $var85)  ;; Variable 'x1'
+    (local.get $var86)  ;; Variable 'y1'
+    (local.get $var88)  ;; Variable 'x2'
+    (local.get $var89)  ;; Variable 'y2'
+    (local.get $var87)  ;; Variable 'r1'
+    (local.get $var90)  ;; Variable 'r2'
+    (i32.add)
+    (call $Fun2)  ;; Call function TestInRange
+    (return)
+  )
+  (func $Fun4 (result i32)
+    (i32.const 0)  ;; Literal string "black"
+    (call $setFillColor) ;; Call function FillColor
+    (i32.const 0)  ;; Literal string "black"
+    (call $setFillColor) ;; Call function FillColor
+    (i32.const 6)  ;; Literal value
+    (call $setLineWidth) ;; Call function LineWidth
+    (i32.const 0)  ;; Literal value
+    (i32.const 0)  ;; Literal value
+    (i32.const 600)  ;; Literal value
+    (i32.const 600)  ;; Literal value
+    (call $drawRect) ;; Call function Rect
+    ;; == If Condition ==
+    (global.get $var22)  ;; Variable 'shield_size'
+    (i32.const 0)  ;; Literal value
+    (i32.gt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (i32.const 6)  ;; Literal string "#6e6a00ff"
+        (call $setStrokeColor) ;; Call function LineColor
+        (i32.const 16)  ;; Literal string "#6e6a00d6"
+        (call $setFillColor) ;; Call function FillColor
+        (i32.const 1)  ;; Literal value
+        (call $setLineWidth) ;; Call function LineWidth
+        (global.get $var20)  ;; Variable 'shield_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var21)  ;; Variable 'shield_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var22)  ;; Variable 'shield_size'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    (i32.const 26)  ;; Literal string "#303030"
+    (call $setFillColor) ;; Call function FillColor
+    (i32.const 34)  ;; Literal string "#808080"
+    (call $setStrokeColor) ;; Call function LineColor
+    (i32.const 4)  ;; Literal value
+    (call $setLineWidth) ;; Call function LineWidth
+    ;; == If Condition ==
+    (global.get $var25)  ;; Variable 'flag1'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var41)  ;; Variable 'flag1_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var42)  ;; Variable 'flag1_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var26)  ;; Variable 'flag2'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var43)  ;; Variable 'flag2_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var44)  ;; Variable 'flag2_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var27)  ;; Variable 'flag3'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var45)  ;; Variable 'flag3_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var46)  ;; Variable 'flag3_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var28)  ;; Variable 'flag4'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var47)  ;; Variable 'flag4_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var48)  ;; Variable 'flag4_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var29)  ;; Variable 'flag5'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var49)  ;; Variable 'flag5_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var50)  ;; Variable 'flag5_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var30)  ;; Variable 'flag6'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var51)  ;; Variable 'flag6_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var52)  ;; Variable 'flag6_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var31)  ;; Variable 'flag7'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var53)  ;; Variable 'flag7_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var54)  ;; Variable 'flag7_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var32)  ;; Variable 'flag8'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var55)  ;; Variable 'flag8_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var56)  ;; Variable 'flag8_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var33)  ;; Variable 'flag9'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var57)  ;; Variable 'flag9_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var58)  ;; Variable 'flag9_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var34)  ;; Variable 'flag10'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var59)  ;; Variable 'flag10_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var60)  ;; Variable 'flag10_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var35)  ;; Variable 'flag11'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var61)  ;; Variable 'flag11_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var62)  ;; Variable 'flag11_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var36)  ;; Variable 'flag12'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var63)  ;; Variable 'flag12_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var64)  ;; Variable 'flag12_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var37)  ;; Variable 'flag13'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var65)  ;; Variable 'flag13_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var66)  ;; Variable 'flag13_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var38)  ;; Variable 'flag14'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var67)  ;; Variable 'flag14_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var68)  ;; Variable 'flag14_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var39)  ;; Variable 'flag15'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var69)  ;; Variable 'flag15_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var70)  ;; Variable 'flag15_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var40)  ;; Variable 'flag16'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var71)  ;; Variable 'flag16_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var72)  ;; Variable 'flag16_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+    ) ;; End 'if'
+    (i32.const 42)  ;; Literal string "green"
+    (call $setFillColor) ;; Call function FillColor
+    (i32.const 48)  ;; Literal string "white"
+    (call $setStrokeColor) ;; Call function LineColor
+    (i32.const 1)  ;; Literal value
+    (call $setLineWidth) ;; Call function LineWidth
+    ;; == If Condition ==
+    (global.get $var25)  ;; Variable 'flag1'
+    (i32.eqz)  ;; Do operator '!'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (global.get $var41)  ;; Variable 'flag1_x'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var42)  ;; Variable 'flag1_y'
+        (i32.const 10)  ;; Literal value
+        (i32.div_s)
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $drawCircle) ;; Call function Circle
+      ) ;; End 'then'
+      (else ;; 'else' block
+        ;; == If Condition ==
+        (global.get $var26)  ;; Variable 'flag2'
+        (i32.eqz)  ;; Do operator '!'
+        (if ;; Execute code based on result of condition.
+          (then ;; 'then' block
+            (global.get $var43)  ;; Variable 'flag2_x'
+            (i32.const 10)  ;; Literal value
+            (i32.div_s)
+            (global.get $var44)  ;; Variable 'flag2_y'
+            (i32.const 10)  ;; Literal value
+            (i32.div_s)
+            (global.get $var73)  ;; Variable 'flag_size'
+            (call $drawCircle) ;; Call function Circle
+          ) ;; End 'then'
+          (else ;; 'else' block
+            ;; == If Condition ==
+            (global.get $var27)  ;; Variable 'flag3'
+            (i32.eqz)  ;; Do operator '!'
+            (if ;; Execute code based on result of condition.
+              (then ;; 'then' block
+                (global.get $var45)  ;; Variable 'flag3_x'
+                (i32.const 10)  ;; Literal value
+                (i32.div_s)
+                (global.get $var46)  ;; Variable 'flag3_y'
+                (i32.const 10)  ;; Literal value
+                (i32.div_s)
+                (global.get $var73)  ;; Variable 'flag_size'
+                (call $drawCircle) ;; Call function Circle
+              ) ;; End 'then'
+              (else ;; 'else' block
+                ;; == If Condition ==
+                (global.get $var28)  ;; Variable 'flag4'
+                (i32.eqz)  ;; Do operator '!'
+                (if ;; Execute code based on result of condition.
+                  (then ;; 'then' block
+                    (global.get $var47)  ;; Variable 'flag4_x'
+                    (i32.const 10)  ;; Literal value
+                    (i32.div_s)
+                    (global.get $var48)  ;; Variable 'flag4_y'
+                    (i32.const 10)  ;; Literal value
+                    (i32.div_s)
+                    (global.get $var73)  ;; Variable 'flag_size'
+                    (call $drawCircle) ;; Call function Circle
+                  ) ;; End 'then'
+                  (else ;; 'else' block
+                    ;; == If Condition ==
+                    (global.get $var29)  ;; Variable 'flag5'
+                    (i32.eqz)  ;; Do operator '!'
+                    (if ;; Execute code based on result of condition.
+                      (then ;; 'then' block
+                        (global.get $var49)  ;; Variable 'flag5_x'
+                        (i32.const 10)  ;; Literal value
+                        (i32.div_s)
+                        (global.get $var50)  ;; Variable 'flag5_y'
+                        (i32.const 10)  ;; Literal value
+                        (i32.div_s)
+                        (global.get $var73)  ;; Variable 'flag_size'
+                        (call $drawCircle) ;; Call function Circle
+                      ) ;; End 'then'
+                      (else ;; 'else' block
+                        ;; == If Condition ==
+                        (global.get $var30)  ;; Variable 'flag6'
+                        (i32.eqz)  ;; Do operator '!'
+                        (if ;; Execute code based on result of condition.
+                          (then ;; 'then' block
+                            (global.get $var51)  ;; Variable 'flag6_x'
+                            (i32.const 10)  ;; Literal value
+                            (i32.div_s)
+                            (global.get $var52)  ;; Variable 'flag6_y'
+                            (i32.const 10)  ;; Literal value
+                            (i32.div_s)
+                            (global.get $var73)  ;; Variable 'flag_size'
+                            (call $drawCircle) ;; Call function Circle
+                          ) ;; End 'then'
+                          (else ;; 'else' block
+                            ;; == If Condition ==
+                            (global.get $var31)  ;; Variable 'flag7'
+                            (i32.eqz)  ;; Do operator '!'
+                            (if ;; Execute code based on result of condition.
+                              (then ;; 'then' block
+                                (global.get $var53)  ;; Variable 'flag7_x'
+                                (i32.const 10)  ;; Literal value
+                                (i32.div_s)
+                                (global.get $var54)  ;; Variable 'flag7_y'
+                                (i32.const 10)  ;; Literal value
+                                (i32.div_s)
+                                (global.get $var73)  ;; Variable 'flag_size'
+                                (call $drawCircle) ;; Call function Circle
+                              ) ;; End 'then'
+                              (else ;; 'else' block
+                                ;; == If Condition ==
+                                (global.get $var32)  ;; Variable 'flag8'
+                                (i32.eqz)  ;; Do operator '!'
+                                (if ;; Execute code based on result of condition.
+                                  (then ;; 'then' block
+                                    (global.get $var55)  ;; Variable 'flag8_x'
+                                    (i32.const 10)  ;; Literal value
+                                    (i32.div_s)
+                                    (global.get $var56)  ;; Variable 'flag8_y'
+                                    (i32.const 10)  ;; Literal value
+                                    (i32.div_s)
+                                    (global.get $var73)  ;; Variable 'flag_size'
+                                    (call $drawCircle) ;; Call function Circle
+                                  ) ;; End 'then'
+                                  (else ;; 'else' block
+                                    ;; == If Condition ==
+                                    (global.get $var33)  ;; Variable 'flag9'
+                                    (i32.eqz)  ;; Do operator '!'
+                                    (if ;; Execute code based on result of condition.
+                                      (then ;; 'then' block
+                                        (global.get $var57)  ;; Variable 'flag9_x'
+                                        (i32.const 10)  ;; Literal value
+                                        (i32.div_s)
+                                        (global.get $var58)  ;; Variable 'flag9_y'
+                                        (i32.const 10)  ;; Literal value
+                                        (i32.div_s)
+                                        (global.get $var73)  ;; Variable 'flag_size'
+                                        (call $drawCircle) ;; Call function Circle
+                                      ) ;; End 'then'
+                                      (else ;; 'else' block
+                                        ;; == If Condition ==
+                                        (global.get $var34)  ;; Variable 'flag10'
+                                        (i32.eqz)  ;; Do operator '!'
+                                        (if ;; Execute code based on result of condition.
+                                          (then ;; 'then' block
+                                            (global.get $var59)  ;; Variable 'flag10_x'
+                                            (i32.const 10)  ;; Literal value
+                                            (i32.div_s)
+                                            (global.get $var60)  ;; Variable 'flag10_y'
+                                            (i32.const 10)  ;; Literal value
+                                            (i32.div_s)
+                                            (global.get $var73)  ;; Variable 'flag_size'
+                                            (call $drawCircle) ;; Call function Circle
+                                          ) ;; End 'then'
+                                          (else ;; 'else' block
+                                            ;; == If Condition ==
+                                            (global.get $var35)  ;; Variable 'flag11'
+                                            (i32.eqz)  ;; Do operator '!'
+                                            (if ;; Execute code based on result of condition.
+                                              (then ;; 'then' block
+                                                (global.get $var61)  ;; Variable 'flag11_x'
+                                                (i32.const 10)  ;; Literal value
+                                                (i32.div_s)
+                                                (global.get $var62)  ;; Variable 'flag11_y'
+                                                (i32.const 10)  ;; Literal value
+                                                (i32.div_s)
+                                                (global.get $var73)  ;; Variable 'flag_size'
+                                                (call $drawCircle) ;; Call function Circle
+                                              ) ;; End 'then'
+                                              (else ;; 'else' block
+                                                ;; == If Condition ==
+                                                (global.get $var36)  ;; Variable 'flag12'
+                                                (i32.eqz)  ;; Do operator '!'
+                                                (if ;; Execute code based on result of condition.
+                                                  (then ;; 'then' block
+                                                    (global.get $var63)  ;; Variable 'flag12_x'
+                                                    (i32.const 10)  ;; Literal value
+                                                    (i32.div_s)
+                                                    (global.get $var64)  ;; Variable 'flag12_y'
+                                                    (i32.const 10)  ;; Literal value
+                                                    (i32.div_s)
+                                                    (global.get $var73)  ;; Variable 'flag_size'
+                                                    (call $drawCircle) ;; Call function Circle
+                                                  ) ;; End 'then'
+                                                  (else ;; 'else' block
+                                                    ;; == If Condition ==
+                                                    (global.get $var37)  ;; Variable 'flag13'
+                                                    (i32.eqz)  ;; Do operator '!'
+                                                    (if ;; Execute code based on result of condition.
+                                                      (then ;; 'then' block
+                                                        (global.get $var65)  ;; Variable 'flag13_x'
+                                                        (i32.const 10)  ;; Literal value
+                                                        (i32.div_s)
+                                                        (global.get $var66)  ;; Variable 'flag13_y'
+                                                        (i32.const 10)  ;; Literal value
+                                                        (i32.div_s)
+                                                        (global.get $var73)  ;; Variable 'flag_size'
+                                                        (call $drawCircle) ;; Call function Circle
+                                                      ) ;; End 'then'
+                                                      (else ;; 'else' block
+                                                        ;; == If Condition ==
+                                                        (global.get $var38)  ;; Variable 'flag14'
+                                                        (i32.eqz)  ;; Do operator '!'
+                                                        (if ;; Execute code based on result of condition.
+                                                          (then ;; 'then' block
+                                                            (global.get $var67)  ;; Variable 'flag14_x'
+                                                            (i32.const 10)  ;; Literal value
+                                                            (i32.div_s)
+                                                            (global.get $var68)  ;; Variable 'flag14_y'
+                                                            (i32.const 10)  ;; Literal value
+                                                            (i32.div_s)
+                                                            (global.get $var73)  ;; Variable 'flag_size'
+                                                            (call $drawCircle) ;; Call function Circle
+                                                          ) ;; End 'then'
+                                                          (else ;; 'else' block
+                                                            ;; == If Condition ==
+                                                            (global.get $var39)  ;; Variable 'flag15'
+                                                            (i32.eqz)  ;; Do operator '!'
+                                                            (if ;; Execute code based on result of condition.
+                                                              (then ;; 'then' block
+                                                                (global.get $var69)  ;; Variable 'flag15_x'
+                                                                (i32.const 10)  ;; Literal value
+                                                                (i32.div_s)
+                                                                (global.get $var70)  ;; Variable 'flag15_y'
+                                                                (i32.const 10)  ;; Literal value
+                                                                (i32.div_s)
+                                                                (global.get $var73)  ;; Variable 'flag_size'
+                                                                (call $drawCircle) ;; Call function Circle
+                                                              ) ;; End 'then'
+                                                              (else ;; 'else' block
+                                                                ;; == If Condition ==
+                                                                (global.get $var40)  ;; Variable 'flag16'
+                                                                (i32.eqz)  ;; Do operator '!'
+                                                                (if ;; Execute code based on result of condition.
+                                                                  (then ;; 'then' block
+                                                                    (global.get $var71)  ;; Variable 'flag16_x'
+                                                                    (i32.const 10)  ;; Literal value
+                                                                    (i32.div_s)
+                                                                    (global.get $var72)  ;; Variable 'flag16_y'
+                                                                    (i32.const 10)  ;; Literal value
+                                                                    (i32.div_s)
+                                                                    (global.get $var73)  ;; Variable 'flag_size'
+                                                                    (call $drawCircle) ;; Call function Circle
+                                                                  ) ;; End 'then'
+                                                                ) ;; End 'if'
+                                                              ) ;; End 'else'
+                                                            ) ;; End 'if'
+                                                          ) ;; End 'else'
+                                                        ) ;; End 'if'
+                                                      ) ;; End 'else'
+                                                    ) ;; End 'if'
+                                                  ) ;; End 'else'
+                                                ) ;; End 'if'
+                                              ) ;; End 'else'
+                                            ) ;; End 'if'
+                                          ) ;; End 'else'
+                                        ) ;; End 'if'
+                                      ) ;; End 'else'
+                                    ) ;; End 'if'
+                                  ) ;; End 'else'
+                                ) ;; End 'if'
+                              ) ;; End 'else'
+                            ) ;; End 'if'
+                          ) ;; End 'else'
+                        ) ;; End 'if'
+                      ) ;; End 'else'
+                    ) ;; End 'if'
+                  ) ;; End 'else'
+                ) ;; End 'if'
+              ) ;; End 'else'
+            ) ;; End 'if'
+          ) ;; End 'else'
+        ) ;; End 'if'
+      ) ;; End 'else'
+    ) ;; End 'if'
+    (i32.const 48)  ;; Literal string "white"
+    (call $setStrokeColor) ;; Call function LineColor
+    (i32.const 54)  ;; Literal string "blue"
+    (call $setFillColor) ;; Call function FillColor
+    (i32.const 2)  ;; Literal value
+    (call $setLineWidth) ;; Call function LineWidth
+    (global.get $var0)  ;; Variable 'player_x'
+    (i32.const 10)  ;; Literal value
+    (i32.div_s)
+    (global.get $var1)  ;; Variable 'player_y'
+    (i32.const 10)  ;; Literal value
+    (i32.div_s)
+    (global.get $var2)  ;; Variable 'player_size'
+    (i32.const 10)  ;; Literal value
+    (i32.div_s)
+    (call $drawCircle) ;; Call function Circle
+    (i32.const 48)  ;; Literal string "white"
+    (call $setStrokeColor) ;; Call function LineColor
+    (i32.const 59)  ;; Literal string "red"
+    (call $setFillColor) ;; Call function FillColor
+    (i32.const 1)  ;; Literal value
+    (call $setLineWidth) ;; Call function LineWidth
+    (global.get $var4)  ;; Variable 'item1_x'
+    (i32.const 10)  ;; Literal value
+    (i32.div_s)
+    (global.get $var5)  ;; Variable 'item1_y'
+    (i32.const 10)  ;; Literal value
+    (i32.div_s)
+    (global.get $var6)  ;; Variable 'item1_size'
+    (i32.const 10)  ;; Literal value
+    (i32.div_s)
+    (call $drawCircle) ;; Call function Circle
+    (global.get $var8)  ;; Variable 'item2_x'
+    (i32.const 10)  ;; Literal value
+    (i32.div_s)
+    (global.get $var9)  ;; Variable 'item2_y'
+    (i32.const 10)  ;; Literal value
+    (i32.div_s)
+    (global.get $var10)  ;; Variable 'item2_size'
+    (i32.const 10)  ;; Literal value
+    (i32.div_s)
+    (call $drawCircle) ;; Call function Circle
+    (global.get $var12)  ;; Variable 'item3_x'
+    (i32.const 10)  ;; Literal value
+    (i32.div_s)
+    (global.get $var13)  ;; Variable 'item3_y'
+    (i32.const 10)  ;; Literal value
+    (i32.div_s)
+    (global.get $var14)  ;; Variable 'item3_size'
+    (i32.const 10)  ;; Literal value
+    (i32.div_s)
+    (call $drawCircle) ;; Call function Circle
+    (global.get $var16)  ;; Variable 'item4_x'
+    (i32.const 10)  ;; Literal value
+    (i32.div_s)
+    (global.get $var17)  ;; Variable 'item4_y'
+    (i32.const 10)  ;; Literal value
+    (i32.div_s)
+    (global.get $var18)  ;; Variable 'item4_size'
+    (i32.const 10)  ;; Literal value
+    (i32.div_s)
+    (call $drawCircle) ;; Call function Circle
+    ;; == If Condition ==
+    (global.get $var40)  ;; Variable 'flag16'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (i32.const 1)  ;; Literal value
+        (global.set $var74)  ;; Set variable 'done'
+        (i32.const 0)  ;; Literal string "black"
+        (call $setFillColor) ;; Call function FillColor
+        (i32.const 48)  ;; Literal string "white"
+        (call $setStrokeColor) ;; Call function LineColor
+        (i32.const 5)  ;; Literal value
+        (call $setLineWidth) ;; Call function LineWidth
+        (i32.const 180)  ;; Literal value
+        (i32.const 30)  ;; Literal value
+        (i32.const 240)  ;; Literal value
+        (i32.const 60)  ;; Literal value
+        (call $drawRect) ;; Call function Rect
+        (i32.const 63)  ;; Literal string "yellow"
+        (call $setFillColor) ;; Call function FillColor
+        (i32.const 190)  ;; Literal value
+        (i32.const 40)  ;; Literal value
+        (i32.const 50)  ;; Literal value
+        (i32.const 70)  ;; Literal string "You Win!"
+        (call $drawText) ;; Call function Text
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == Generate return code ==
+    (i32.const 0)  ;; Literal value
+    (return)
+  )
+  (func $Fun5 (param $var91 f64) (result i32)
+    (local $var92 i32) ;; Declare var 'old_x'
+    (local $var93 i32) ;; Declare var 'old_y'
+    ;; == If Condition ==
+    (global.get $var74)  ;; Variable 'done'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; == Generate return code ==
+        (i32.const 0)  ;; Literal value
+        (return)
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; Calculate RHS for assignment.
+    (global.get $var4)  ;; Variable 'item1_x'
+    (local.set $var92)  ;; Set variable 'old_x'
+    ;; Calculate RHS for assignment.
+    (global.get $var5)  ;; Variable 'item1_y'
+    (local.set $var93)  ;; Set variable 'old_y'
+    ;; == If Condition ==
+    (global.get $var4)  ;; Variable 'item1_x'
+    (global.get $var0)  ;; Variable 'player_x'
+    (i32.lt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (global.get $var4)  ;; Variable 'item1_x'
+        (i32.const 2)  ;; Literal value
+        (i32.add)
+        (global.set $var4)  ;; Set variable 'item1_x'
+      ) ;; End 'then'
+      (else ;; 'else' block
+        ;; Calculate RHS for assignment.
+        (global.get $var4)  ;; Variable 'item1_x'
+        (i32.const 2)  ;; Literal value
+        (i32.sub)
+        (global.set $var4)  ;; Set variable 'item1_x'
+      ) ;; End 'else'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var5)  ;; Variable 'item1_y'
+    (global.get $var1)  ;; Variable 'player_y'
+    (i32.lt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (global.get $var5)  ;; Variable 'item1_y'
+        (i32.const 2)  ;; Literal value
+        (i32.add)
+        (global.set $var5)  ;; Set variable 'item1_y'
+      ) ;; End 'then'
+      (else ;; 'else' block
+        ;; Calculate RHS for assignment.
+        (global.get $var5)  ;; Variable 'item1_y'
+        (i32.const 2)  ;; Literal value
+        (i32.sub)
+        (global.set $var5)  ;; Set variable 'item1_y'
+      ) ;; End 'else'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var0)  ;; Variable 'player_x'
+    (global.get $var1)  ;; Variable 'player_y'
+    (global.get $var2)  ;; Variable 'player_size'
+    (global.get $var4)  ;; Variable 'item1_x'
+    (global.get $var5)  ;; Variable 'item1_y'
+    (global.get $var6)  ;; Variable 'item1_size'
+    (call $Fun3)  ;; Call function TestCollide
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (call $Fun1)  ;; Call function Reset
+        (drop) ;; Result not used.
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var20)  ;; Variable 'shield_x'
+    (global.get $var21)  ;; Variable 'shield_y'
+    (global.get $var22)  ;; Variable 'shield_size'
+    (global.get $var4)  ;; Variable 'item1_x'
+    (global.get $var5)  ;; Variable 'item1_y'
+    (global.get $var6)  ;; Variable 'item1_size'
+    (call $Fun3)  ;; Call function TestCollide
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (local.get $var92)  ;; Variable 'old_x'
+        (global.set $var4)  ;; Set variable 'item1_x'
+        ;; Calculate RHS for assignment.
+        (local.get $var93)  ;; Variable 'old_y'
+        (global.set $var5)  ;; Set variable 'item1_y'
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; Calculate RHS for assignment.
+    (global.get $var8)  ;; Variable 'item2_x'
+    (local.set $var92)  ;; Set variable 'old_x'
+    ;; Calculate RHS for assignment.
+    (global.get $var9)  ;; Variable 'item2_y'
+    (local.set $var93)  ;; Set variable 'old_y'
+    ;; == If Condition ==
+    (global.get $var8)  ;; Variable 'item2_x'
+    (global.get $var0)  ;; Variable 'player_x'
+    (i32.lt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (global.get $var8)  ;; Variable 'item2_x'
+        (i32.const 3)  ;; Literal value
+        (i32.add)
+        (global.set $var8)  ;; Set variable 'item2_x'
+      ) ;; End 'then'
+      (else ;; 'else' block
+        ;; Calculate RHS for assignment.
+        (global.get $var8)  ;; Variable 'item2_x'
+        (i32.const 3)  ;; Literal value
+        (i32.sub)
+        (global.set $var8)  ;; Set variable 'item2_x'
+      ) ;; End 'else'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var9)  ;; Variable 'item2_y'
+    (global.get $var1)  ;; Variable 'player_y'
+    (i32.lt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (global.get $var9)  ;; Variable 'item2_y'
+        (i32.const 3)  ;; Literal value
+        (i32.add)
+        (global.set $var9)  ;; Set variable 'item2_y'
+      ) ;; End 'then'
+      (else ;; 'else' block
+        ;; Calculate RHS for assignment.
+        (global.get $var9)  ;; Variable 'item2_y'
+        (i32.const 3)  ;; Literal value
+        (i32.sub)
+        (global.set $var9)  ;; Set variable 'item2_y'
+      ) ;; End 'else'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var0)  ;; Variable 'player_x'
+    (global.get $var1)  ;; Variable 'player_y'
+    (global.get $var2)  ;; Variable 'player_size'
+    (global.get $var8)  ;; Variable 'item2_x'
+    (global.get $var9)  ;; Variable 'item2_y'
+    (global.get $var10)  ;; Variable 'item2_size'
+    (call $Fun3)  ;; Call function TestCollide
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (call $Fun1)  ;; Call function Reset
+        (drop) ;; Result not used.
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var20)  ;; Variable 'shield_x'
+    (global.get $var21)  ;; Variable 'shield_y'
+    (global.get $var22)  ;; Variable 'shield_size'
+    (global.get $var8)  ;; Variable 'item2_x'
+    (global.get $var9)  ;; Variable 'item2_y'
+    (global.get $var10)  ;; Variable 'item2_size'
+    (call $Fun3)  ;; Call function TestCollide
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (local.get $var92)  ;; Variable 'old_x'
+        (global.set $var8)  ;; Set variable 'item2_x'
+        ;; Calculate RHS for assignment.
+        (local.get $var93)  ;; Variable 'old_y'
+        (global.set $var9)  ;; Set variable 'item2_y'
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; Calculate RHS for assignment.
+    (global.get $var12)  ;; Variable 'item3_x'
+    (local.set $var92)  ;; Set variable 'old_x'
+    ;; Calculate RHS for assignment.
+    (global.get $var13)  ;; Variable 'item3_y'
+    (local.set $var93)  ;; Set variable 'old_y'
+    ;; == If Condition ==
+    (global.get $var12)  ;; Variable 'item3_x'
+    (global.get $var0)  ;; Variable 'player_x'
+    (i32.lt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (global.get $var12)  ;; Variable 'item3_x'
+        (i32.const 4)  ;; Literal value
+        (i32.add)
+        (global.set $var12)  ;; Set variable 'item3_x'
+      ) ;; End 'then'
+      (else ;; 'else' block
+        ;; Calculate RHS for assignment.
+        (global.get $var12)  ;; Variable 'item3_x'
+        (i32.const 4)  ;; Literal value
+        (i32.sub)
+        (global.set $var12)  ;; Set variable 'item3_x'
+      ) ;; End 'else'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var13)  ;; Variable 'item3_y'
+    (global.get $var1)  ;; Variable 'player_y'
+    (i32.lt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (global.get $var13)  ;; Variable 'item3_y'
+        (i32.const 4)  ;; Literal value
+        (i32.add)
+        (global.set $var13)  ;; Set variable 'item3_y'
+      ) ;; End 'then'
+      (else ;; 'else' block
+        ;; Calculate RHS for assignment.
+        (global.get $var13)  ;; Variable 'item3_y'
+        (i32.const 4)  ;; Literal value
+        (i32.sub)
+        (global.set $var13)  ;; Set variable 'item3_y'
+      ) ;; End 'else'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var0)  ;; Variable 'player_x'
+    (global.get $var1)  ;; Variable 'player_y'
+    (global.get $var2)  ;; Variable 'player_size'
+    (global.get $var12)  ;; Variable 'item3_x'
+    (global.get $var13)  ;; Variable 'item3_y'
+    (global.get $var14)  ;; Variable 'item3_size'
+    (call $Fun3)  ;; Call function TestCollide
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (call $Fun1)  ;; Call function Reset
+        (drop) ;; Result not used.
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var20)  ;; Variable 'shield_x'
+    (global.get $var21)  ;; Variable 'shield_y'
+    (global.get $var22)  ;; Variable 'shield_size'
+    (global.get $var12)  ;; Variable 'item3_x'
+    (global.get $var13)  ;; Variable 'item3_y'
+    (global.get $var14)  ;; Variable 'item3_size'
+    (call $Fun3)  ;; Call function TestCollide
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (local.get $var92)  ;; Variable 'old_x'
+        (global.set $var12)  ;; Set variable 'item3_x'
+        ;; Calculate RHS for assignment.
+        (local.get $var93)  ;; Variable 'old_y'
+        (global.set $var13)  ;; Set variable 'item3_y'
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; Calculate RHS for assignment.
+    (global.get $var16)  ;; Variable 'item4_x'
+    (local.set $var92)  ;; Set variable 'old_x'
+    ;; Calculate RHS for assignment.
+    (global.get $var17)  ;; Variable 'item4_y'
+    (local.set $var93)  ;; Set variable 'old_y'
+    ;; == If Condition ==
+    (global.get $var16)  ;; Variable 'item4_x'
+    (global.get $var0)  ;; Variable 'player_x'
+    (i32.lt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (global.get $var16)  ;; Variable 'item4_x'
+        (i32.const 5)  ;; Literal value
+        (i32.add)
+        (global.set $var16)  ;; Set variable 'item4_x'
+      ) ;; End 'then'
+      (else ;; 'else' block
+        ;; Calculate RHS for assignment.
+        (global.get $var16)  ;; Variable 'item4_x'
+        (i32.const 5)  ;; Literal value
+        (i32.sub)
+        (global.set $var16)  ;; Set variable 'item4_x'
+      ) ;; End 'else'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var17)  ;; Variable 'item4_y'
+    (global.get $var1)  ;; Variable 'player_y'
+    (i32.lt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (global.get $var17)  ;; Variable 'item4_y'
+        (i32.const 5)  ;; Literal value
+        (i32.add)
+        (global.set $var17)  ;; Set variable 'item4_y'
+      ) ;; End 'then'
+      (else ;; 'else' block
+        ;; Calculate RHS for assignment.
+        (global.get $var17)  ;; Variable 'item4_y'
+        (i32.const 5)  ;; Literal value
+        (i32.sub)
+        (global.set $var17)  ;; Set variable 'item4_y'
+      ) ;; End 'else'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var0)  ;; Variable 'player_x'
+    (global.get $var1)  ;; Variable 'player_y'
+    (global.get $var2)  ;; Variable 'player_size'
+    (global.get $var16)  ;; Variable 'item4_x'
+    (global.get $var17)  ;; Variable 'item4_y'
+    (global.get $var18)  ;; Variable 'item4_size'
+    (call $Fun3)  ;; Call function TestCollide
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        (call $Fun1)  ;; Call function Reset
+        (drop) ;; Result not used.
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var20)  ;; Variable 'shield_x'
+    (global.get $var21)  ;; Variable 'shield_y'
+    (global.get $var22)  ;; Variable 'shield_size'
+    (global.get $var16)  ;; Variable 'item4_x'
+    (global.get $var17)  ;; Variable 'item4_y'
+    (global.get $var18)  ;; Variable 'item4_size'
+    (call $Fun3)  ;; Call function TestCollide
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (local.get $var92)  ;; Variable 'old_x'
+        (global.set $var16)  ;; Set variable 'item4_x'
+        ;; Calculate RHS for assignment.
+        (local.get $var93)  ;; Variable 'old_y'
+        (global.set $var17)  ;; Set variable 'item4_y'
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; Calculate RHS for assignment.
+    (global.get $var0)  ;; Variable 'player_x'
+    (global.get $var23)  ;; Variable 'vel_x'
+    (i32.add)
+    (global.set $var0)  ;; Set variable 'player_x'
+    ;; == If Condition ==
+    (global.get $var0)  ;; Variable 'player_x'
+    (i32.const 0)  ;; Literal value
+    (i32.lt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (i32.const 0)  ;; Literal value
+        (global.set $var0)  ;; Set variable 'player_x'
+        ;; Calculate RHS for assignment.
+        (i32.const 0)  ;; Literal value
+        (global.set $var23)  ;; Set variable 'vel_x'
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var0)  ;; Variable 'player_x'
+    (i32.const 6000)  ;; Literal value
+    (i32.gt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (i32.const 6000)  ;; Literal value
+        (global.set $var0)  ;; Set variable 'player_x'
+        ;; Calculate RHS for assignment.
+        (i32.const 0)  ;; Literal value
+        (global.set $var23)  ;; Set variable 'vel_x'
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; Calculate RHS for assignment.
+    (global.get $var1)  ;; Variable 'player_y'
+    (global.get $var24)  ;; Variable 'vel_y'
+    (i32.add)
+    (global.set $var1)  ;; Set variable 'player_y'
+    ;; == If Condition ==
+    (global.get $var1)  ;; Variable 'player_y'
+    (i32.const 0)  ;; Literal value
+    (i32.lt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (i32.const 0)  ;; Literal value
+        (global.set $var1)  ;; Set variable 'player_y'
+        ;; Calculate RHS for assignment.
+        (i32.const 0)  ;; Literal value
+        (global.set $var24)  ;; Set variable 'vel_y'
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var1)  ;; Variable 'player_y'
+    (i32.const 6000)  ;; Literal value
+    (i32.gt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (i32.const 6000)  ;; Literal value
+        (global.set $var1)  ;; Set variable 'player_y'
+        ;; Calculate RHS for assignment.
+        (i32.const 0)  ;; Literal value
+        (global.set $var24)  ;; Set variable 'vel_y'
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var25)  ;; Variable 'flag1'
+    (i32.eqz)  ;; Do operator '!'
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; == If Condition ==
+        (global.get $var0)  ;; Variable 'player_x'
+        (global.get $var1)  ;; Variable 'player_y'
+        (global.get $var2)  ;; Variable 'player_size'
+        (global.get $var41)  ;; Variable 'flag1_x'
+        (global.get $var42)  ;; Variable 'flag1_y'
+        (global.get $var73)  ;; Variable 'flag_size'
+        (call $Fun3)  ;; Call function TestCollide
+        (if ;; Execute code based on result of condition.
+          (then ;; 'then' block
+            ;; Calculate RHS for assignment.
+            (i32.const 1)  ;; Literal value
+            (global.set $var25)  ;; Set variable 'flag1'
+          ) ;; End 'then'
+        ) ;; End 'if'
+      ) ;; End 'then'
+      (else ;; 'else' block
+        ;; == If Condition ==
+        (global.get $var26)  ;; Variable 'flag2'
+        (i32.eqz)  ;; Do operator '!'
+        (if ;; Execute code based on result of condition.
+          (then ;; 'then' block
+            ;; == If Condition ==
+            (global.get $var0)  ;; Variable 'player_x'
+            (global.get $var1)  ;; Variable 'player_y'
+            (global.get $var2)  ;; Variable 'player_size'
+            (global.get $var43)  ;; Variable 'flag2_x'
+            (global.get $var44)  ;; Variable 'flag2_y'
+            (global.get $var73)  ;; Variable 'flag_size'
+            (call $Fun3)  ;; Call function TestCollide
+            (if ;; Execute code based on result of condition.
+              (then ;; 'then' block
+                ;; Calculate RHS for assignment.
+                (i32.const 1)  ;; Literal value
+                (global.set $var26)  ;; Set variable 'flag2'
+              ) ;; End 'then'
+            ) ;; End 'if'
+          ) ;; End 'then'
+          (else ;; 'else' block
+            ;; == If Condition ==
+            (global.get $var27)  ;; Variable 'flag3'
+            (i32.eqz)  ;; Do operator '!'
+            (if ;; Execute code based on result of condition.
+              (then ;; 'then' block
+                ;; == If Condition ==
+                (global.get $var0)  ;; Variable 'player_x'
+                (global.get $var1)  ;; Variable 'player_y'
+                (global.get $var2)  ;; Variable 'player_size'
+                (global.get $var45)  ;; Variable 'flag3_x'
+                (global.get $var46)  ;; Variable 'flag3_y'
+                (global.get $var73)  ;; Variable 'flag_size'
+                (call $Fun3)  ;; Call function TestCollide
+                (if ;; Execute code based on result of condition.
+                  (then ;; 'then' block
+                    ;; Calculate RHS for assignment.
+                    (i32.const 1)  ;; Literal value
+                    (global.set $var27)  ;; Set variable 'flag3'
+                  ) ;; End 'then'
+                ) ;; End 'if'
+              ) ;; End 'then'
+              (else ;; 'else' block
+                ;; == If Condition ==
+                (global.get $var28)  ;; Variable 'flag4'
+                (i32.eqz)  ;; Do operator '!'
+                (if ;; Execute code based on result of condition.
+                  (then ;; 'then' block
+                    ;; == If Condition ==
+                    (global.get $var0)  ;; Variable 'player_x'
+                    (global.get $var1)  ;; Variable 'player_y'
+                    (global.get $var2)  ;; Variable 'player_size'
+                    (global.get $var47)  ;; Variable 'flag4_x'
+                    (global.get $var48)  ;; Variable 'flag4_y'
+                    (global.get $var73)  ;; Variable 'flag_size'
+                    (call $Fun3)  ;; Call function TestCollide
+                    (if ;; Execute code based on result of condition.
+                      (then ;; 'then' block
+                        ;; Calculate RHS for assignment.
+                        (i32.const 1)  ;; Literal value
+                        (global.set $var28)  ;; Set variable 'flag4'
+                      ) ;; End 'then'
+                    ) ;; End 'if'
+                  ) ;; End 'then'
+                  (else ;; 'else' block
+                    ;; == If Condition ==
+                    (global.get $var29)  ;; Variable 'flag5'
+                    (i32.eqz)  ;; Do operator '!'
+                    (if ;; Execute code based on result of condition.
+                      (then ;; 'then' block
+                        ;; == If Condition ==
+                        (global.get $var0)  ;; Variable 'player_x'
+                        (global.get $var1)  ;; Variable 'player_y'
+                        (global.get $var2)  ;; Variable 'player_size'
+                        (global.get $var49)  ;; Variable 'flag5_x'
+                        (global.get $var50)  ;; Variable 'flag5_y'
+                        (global.get $var73)  ;; Variable 'flag_size'
+                        (call $Fun3)  ;; Call function TestCollide
+                        (if ;; Execute code based on result of condition.
+                          (then ;; 'then' block
+                            ;; Calculate RHS for assignment.
+                            (i32.const 1)  ;; Literal value
+                            (global.set $var29)  ;; Set variable 'flag5'
+                          ) ;; End 'then'
+                        ) ;; End 'if'
+                      ) ;; End 'then'
+                      (else ;; 'else' block
+                        ;; == If Condition ==
+                        (global.get $var30)  ;; Variable 'flag6'
+                        (i32.eqz)  ;; Do operator '!'
+                        (if ;; Execute code based on result of condition.
+                          (then ;; 'then' block
+                            ;; == If Condition ==
+                            (global.get $var0)  ;; Variable 'player_x'
+                            (global.get $var1)  ;; Variable 'player_y'
+                            (global.get $var2)  ;; Variable 'player_size'
+                            (global.get $var51)  ;; Variable 'flag6_x'
+                            (global.get $var52)  ;; Variable 'flag6_y'
+                            (global.get $var73)  ;; Variable 'flag_size'
+                            (call $Fun3)  ;; Call function TestCollide
+                            (if ;; Execute code based on result of condition.
+                              (then ;; 'then' block
+                                ;; Calculate RHS for assignment.
+                                (i32.const 1)  ;; Literal value
+                                (global.set $var30)  ;; Set variable 'flag6'
+                              ) ;; End 'then'
+                            ) ;; End 'if'
+                          ) ;; End 'then'
+                          (else ;; 'else' block
+                            ;; == If Condition ==
+                            (global.get $var31)  ;; Variable 'flag7'
+                            (i32.eqz)  ;; Do operator '!'
+                            (if ;; Execute code based on result of condition.
+                              (then ;; 'then' block
+                                ;; == If Condition ==
+                                (global.get $var0)  ;; Variable 'player_x'
+                                (global.get $var1)  ;; Variable 'player_y'
+                                (global.get $var2)  ;; Variable 'player_size'
+                                (global.get $var53)  ;; Variable 'flag7_x'
+                                (global.get $var54)  ;; Variable 'flag7_y'
+                                (global.get $var73)  ;; Variable 'flag_size'
+                                (call $Fun3)  ;; Call function TestCollide
+                                (if ;; Execute code based on result of condition.
+                                  (then ;; 'then' block
+                                    ;; Calculate RHS for assignment.
+                                    (i32.const 1)  ;; Literal value
+                                    (global.set $var31)  ;; Set variable 'flag7'
+                                  ) ;; End 'then'
+                                ) ;; End 'if'
+                              ) ;; End 'then'
+                              (else ;; 'else' block
+                                ;; == If Condition ==
+                                (global.get $var32)  ;; Variable 'flag8'
+                                (i32.eqz)  ;; Do operator '!'
+                                (if ;; Execute code based on result of condition.
+                                  (then ;; 'then' block
+                                    ;; == If Condition ==
+                                    (global.get $var0)  ;; Variable 'player_x'
+                                    (global.get $var1)  ;; Variable 'player_y'
+                                    (global.get $var2)  ;; Variable 'player_size'
+                                    (global.get $var55)  ;; Variable 'flag8_x'
+                                    (global.get $var56)  ;; Variable 'flag8_y'
+                                    (global.get $var73)  ;; Variable 'flag_size'
+                                    (call $Fun3)  ;; Call function TestCollide
+                                    (if ;; Execute code based on result of condition.
+                                      (then ;; 'then' block
+                                        ;; Calculate RHS for assignment.
+                                        (i32.const 1)  ;; Literal value
+                                        (global.set $var32)  ;; Set variable 'flag8'
+                                      ) ;; End 'then'
+                                    ) ;; End 'if'
+                                  ) ;; End 'then'
+                                  (else ;; 'else' block
+                                    ;; == If Condition ==
+                                    (global.get $var33)  ;; Variable 'flag9'
+                                    (i32.eqz)  ;; Do operator '!'
+                                    (if ;; Execute code based on result of condition.
+                                      (then ;; 'then' block
+                                        ;; == If Condition ==
+                                        (global.get $var0)  ;; Variable 'player_x'
+                                        (global.get $var1)  ;; Variable 'player_y'
+                                        (global.get $var2)  ;; Variable 'player_size'
+                                        (global.get $var57)  ;; Variable 'flag9_x'
+                                        (global.get $var58)  ;; Variable 'flag9_y'
+                                        (global.get $var73)  ;; Variable 'flag_size'
+                                        (call $Fun3)  ;; Call function TestCollide
+                                        (if ;; Execute code based on result of condition.
+                                          (then ;; 'then' block
+                                            ;; Calculate RHS for assignment.
+                                            (i32.const 1)  ;; Literal value
+                                            (global.set $var33)  ;; Set variable 'flag9'
+                                          ) ;; End 'then'
+                                        ) ;; End 'if'
+                                      ) ;; End 'then'
+                                      (else ;; 'else' block
+                                        ;; == If Condition ==
+                                        (global.get $var34)  ;; Variable 'flag10'
+                                        (i32.eqz)  ;; Do operator '!'
+                                        (if ;; Execute code based on result of condition.
+                                          (then ;; 'then' block
+                                            ;; == If Condition ==
+                                            (global.get $var0)  ;; Variable 'player_x'
+                                            (global.get $var1)  ;; Variable 'player_y'
+                                            (global.get $var2)  ;; Variable 'player_size'
+                                            (global.get $var59)  ;; Variable 'flag10_x'
+                                            (global.get $var60)  ;; Variable 'flag10_y'
+                                            (global.get $var73)  ;; Variable 'flag_size'
+                                            (call $Fun3)  ;; Call function TestCollide
+                                            (if ;; Execute code based on result of condition.
+                                              (then ;; 'then' block
+                                                ;; Calculate RHS for assignment.
+                                                (i32.const 1)  ;; Literal value
+                                                (global.set $var34)  ;; Set variable 'flag10'
+                                              ) ;; End 'then'
+                                            ) ;; End 'if'
+                                          ) ;; End 'then'
+                                          (else ;; 'else' block
+                                            ;; == If Condition ==
+                                            (global.get $var35)  ;; Variable 'flag11'
+                                            (i32.eqz)  ;; Do operator '!'
+                                            (if ;; Execute code based on result of condition.
+                                              (then ;; 'then' block
+                                                ;; == If Condition ==
+                                                (global.get $var0)  ;; Variable 'player_x'
+                                                (global.get $var1)  ;; Variable 'player_y'
+                                                (global.get $var2)  ;; Variable 'player_size'
+                                                (global.get $var61)  ;; Variable 'flag11_x'
+                                                (global.get $var62)  ;; Variable 'flag11_y'
+                                                (global.get $var73)  ;; Variable 'flag_size'
+                                                (call $Fun3)  ;; Call function TestCollide
+                                                (if ;; Execute code based on result of condition.
+                                                  (then ;; 'then' block
+                                                    ;; Calculate RHS for assignment.
+                                                    (i32.const 1)  ;; Literal value
+                                                    (global.set $var35)  ;; Set variable 'flag11'
+                                                  ) ;; End 'then'
+                                                ) ;; End 'if'
+                                              ) ;; End 'then'
+                                              (else ;; 'else' block
+                                                ;; == If Condition ==
+                                                (global.get $var36)  ;; Variable 'flag12'
+                                                (i32.eqz)  ;; Do operator '!'
+                                                (if ;; Execute code based on result of condition.
+                                                  (then ;; 'then' block
+                                                    ;; == If Condition ==
+                                                    (global.get $var0)  ;; Variable 'player_x'
+                                                    (global.get $var1)  ;; Variable 'player_y'
+                                                    (global.get $var2)  ;; Variable 'player_size'
+                                                    (global.get $var63)  ;; Variable 'flag12_x'
+                                                    (global.get $var64)  ;; Variable 'flag12_y'
+                                                    (global.get $var73)  ;; Variable 'flag_size'
+                                                    (call $Fun3)  ;; Call function TestCollide
+                                                    (if ;; Execute code based on result of condition.
+                                                      (then ;; 'then' block
+                                                        ;; Calculate RHS for assignment.
+                                                        (i32.const 1)  ;; Literal value
+                                                        (global.set $var36)  ;; Set variable 'flag12'
+                                                      ) ;; End 'then'
+                                                    ) ;; End 'if'
+                                                  ) ;; End 'then'
+                                                  (else ;; 'else' block
+                                                    ;; == If Condition ==
+                                                    (global.get $var37)  ;; Variable 'flag13'
+                                                    (i32.eqz)  ;; Do operator '!'
+                                                    (if ;; Execute code based on result of condition.
+                                                      (then ;; 'then' block
+                                                        ;; == If Condition ==
+                                                        (global.get $var0)  ;; Variable 'player_x'
+                                                        (global.get $var1)  ;; Variable 'player_y'
+                                                        (global.get $var2)  ;; Variable 'player_size'
+                                                        (global.get $var65)  ;; Variable 'flag13_x'
+                                                        (global.get $var66)  ;; Variable 'flag13_y'
+                                                        (global.get $var73)  ;; Variable 'flag_size'
+                                                        (call $Fun3)  ;; Call function TestCollide
+                                                        (if ;; Execute code based on result of condition.
+                                                          (then ;; 'then' block
+                                                            ;; Calculate RHS for assignment.
+                                                            (i32.const 1)  ;; Literal value
+                                                            (global.set $var37)  ;; Set variable 'flag13'
+                                                          ) ;; End 'then'
+                                                        ) ;; End 'if'
+                                                      ) ;; End 'then'
+                                                      (else ;; 'else' block
+                                                        ;; == If Condition ==
+                                                        (global.get $var38)  ;; Variable 'flag14'
+                                                        (i32.eqz)  ;; Do operator '!'
+                                                        (if ;; Execute code based on result of condition.
+                                                          (then ;; 'then' block
+                                                            ;; == If Condition ==
+                                                            (global.get $var0)  ;; Variable 'player_x'
+                                                            (global.get $var1)  ;; Variable 'player_y'
+                                                            (global.get $var2)  ;; Variable 'player_size'
+                                                            (global.get $var67)  ;; Variable 'flag14_x'
+                                                            (global.get $var68)  ;; Variable 'flag14_y'
+                                                            (global.get $var73)  ;; Variable 'flag_size'
+                                                            (call $Fun3)  ;; Call function TestCollide
+                                                            (if ;; Execute code based on result of condition.
+                                                              (then ;; 'then' block
+                                                                ;; Calculate RHS for assignment.
+                                                                (i32.const 1)  ;; Literal value
+                                                                (global.set $var38)  ;; Set variable 'flag14'
+                                                              ) ;; End 'then'
+                                                            ) ;; End 'if'
+                                                          ) ;; End 'then'
+                                                          (else ;; 'else' block
+                                                            ;; == If Condition ==
+                                                            (global.get $var39)  ;; Variable 'flag15'
+                                                            (i32.eqz)  ;; Do operator '!'
+                                                            (if ;; Execute code based on result of condition.
+                                                              (then ;; 'then' block
+                                                                ;; == If Condition ==
+                                                                (global.get $var0)  ;; Variable 'player_x'
+                                                                (global.get $var1)  ;; Variable 'player_y'
+                                                                (global.get $var2)  ;; Variable 'player_size'
+                                                                (global.get $var69)  ;; Variable 'flag15_x'
+                                                                (global.get $var70)  ;; Variable 'flag15_y'
+                                                                (global.get $var73)  ;; Variable 'flag_size'
+                                                                (call $Fun3)  ;; Call function TestCollide
+                                                                (if ;; Execute code based on result of condition.
+                                                                  (then ;; 'then' block
+                                                                    ;; Calculate RHS for assignment.
+                                                                    (i32.const 1)  ;; Literal value
+                                                                    (global.set $var39)  ;; Set variable 'flag15'
+                                                                  ) ;; End 'then'
+                                                                ) ;; End 'if'
+                                                              ) ;; End 'then'
+                                                              (else ;; 'else' block
+                                                                ;; == If Condition ==
+                                                                (global.get $var40)  ;; Variable 'flag16'
+                                                                (i32.eqz)  ;; Do operator '!'
+                                                                (if ;; Execute code based on result of condition.
+                                                                  (then ;; 'then' block
+                                                                    ;; == If Condition ==
+                                                                    (global.get $var0)  ;; Variable 'player_x'
+                                                                    (global.get $var1)  ;; Variable 'player_y'
+                                                                    (global.get $var2)  ;; Variable 'player_size'
+                                                                    (global.get $var71)  ;; Variable 'flag16_x'
+                                                                    (global.get $var72)  ;; Variable 'flag16_y'
+                                                                    (global.get $var73)  ;; Variable 'flag_size'
+                                                                    (call $Fun3)  ;; Call function TestCollide
+                                                                    (if ;; Execute code based on result of condition.
+                                                                      (then ;; 'then' block
+                                                                        ;; Calculate RHS for assignment.
+                                                                        (i32.const 1)  ;; Literal value
+                                                                        (global.set $var40)  ;; Set variable 'flag16'
+                                                                      ) ;; End 'then'
+                                                                    ) ;; End 'if'
+                                                                  ) ;; End 'then'
+                                                                ) ;; End 'if'
+                                                              ) ;; End 'else'
+                                                            ) ;; End 'if'
+                                                          ) ;; End 'else'
+                                                        ) ;; End 'if'
+                                                      ) ;; End 'else'
+                                                    ) ;; End 'if'
+                                                  ) ;; End 'else'
+                                                ) ;; End 'if'
+                                              ) ;; End 'else'
+                                            ) ;; End 'if'
+                                          ) ;; End 'else'
+                                        ) ;; End 'if'
+                                      ) ;; End 'else'
+                                    ) ;; End 'if'
+                                  ) ;; End 'else'
+                                ) ;; End 'if'
+                              ) ;; End 'else'
+                            ) ;; End 'if'
+                          ) ;; End 'else'
+                        ) ;; End 'if'
+                      ) ;; End 'else'
+                    ) ;; End 'if'
+                  ) ;; End 'else'
+                ) ;; End 'if'
+              ) ;; End 'else'
+            ) ;; End 'if'
+          ) ;; End 'else'
+        ) ;; End 'if'
+      ) ;; End 'else'
+    ) ;; End 'if'
+    ;; == If Condition ==
+    (global.get $var22)  ;; Variable 'shield_size'
+    (i32.const 0)  ;; Literal value
+    (i32.gt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (global.get $var22)  ;; Variable 'shield_size'
+        (i32.const 1)  ;; Literal value
+        (i32.sub)
+        (global.set $var22)  ;; Set variable 'shield_size'
+      ) ;; End 'then'
+    ) ;; End 'if'
+    (call $Fun4)  ;; Call function DrawBoard
+    (drop) ;; Result not used.
+    ;; == Generate return code ==
+    (i32.const 0)  ;; Literal value
+    (return)
+  )
+  (func $Fun6 (result i32)
+    ;; Calculate RHS for assignment.
+    (global.get $var24)  ;; Variable 'vel_y'
+    (global.get $var3)  ;; Variable 'player_accel'
+    (i32.sub)
+    (global.set $var24)  ;; Set variable 'vel_y'
+    ;; == If Condition ==
+    (global.get $var24)  ;; Variable 'vel_y'
+    (global.get $var3)  ;; Variable 'player_accel'
+    (i32.const -1)  ;; Setup negation.
+    (i32.mul)       ;; Perform unary minus ('-')
+    (i32.lt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (global.get $var3)  ;; Variable 'player_accel'
+        (i32.const -1)  ;; Setup negation.
+        (i32.mul)       ;; Perform unary minus ('-')
+        (global.set $var24)  ;; Set variable 'vel_y'
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == Generate return code ==
+    (i32.const 0)  ;; Literal value
+    (return)
+  )
+  (func $Fun7 (result i32)
+    ;; Calculate RHS for assignment.
+    (global.get $var24)  ;; Variable 'vel_y'
+    (global.get $var3)  ;; Variable 'player_accel'
+    (i32.add)
+    (global.set $var24)  ;; Set variable 'vel_y'
+    ;; == If Condition ==
+    (global.get $var24)  ;; Variable 'vel_y'
+    (global.get $var3)  ;; Variable 'player_accel'
+    (i32.gt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (global.get $var3)  ;; Variable 'player_accel'
+        (global.set $var24)  ;; Set variable 'vel_y'
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == Generate return code ==
+    (i32.const 0)  ;; Literal value
+    (return)
+  )
+  (func $Fun8 (result i32)
+    ;; Calculate RHS for assignment.
+    (global.get $var23)  ;; Variable 'vel_x'
+    (global.get $var3)  ;; Variable 'player_accel'
+    (i32.sub)
+    (global.set $var23)  ;; Set variable 'vel_x'
+    ;; == If Condition ==
+    (global.get $var23)  ;; Variable 'vel_x'
+    (global.get $var3)  ;; Variable 'player_accel'
+    (i32.const -1)  ;; Setup negation.
+    (i32.mul)       ;; Perform unary minus ('-')
+    (i32.lt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (global.get $var3)  ;; Variable 'player_accel'
+        (i32.const -1)  ;; Setup negation.
+        (i32.mul)       ;; Perform unary minus ('-')
+        (global.set $var23)  ;; Set variable 'vel_x'
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == Generate return code ==
+    (i32.const 0)  ;; Literal value
+    (return)
+  )
+  (func $Fun9 (result i32)
+    ;; Calculate RHS for assignment.
+    (global.get $var23)  ;; Variable 'vel_x'
+    (global.get $var3)  ;; Variable 'player_accel'
+    (i32.add)
+    (global.set $var23)  ;; Set variable 'vel_x'
+    ;; == If Condition ==
+    (global.get $var23)  ;; Variable 'vel_x'
+    (global.get $var3)  ;; Variable 'player_accel'
+    (i32.gt_s)
+    (if ;; Execute code based on result of condition.
+      (then ;; 'then' block
+        ;; Calculate RHS for assignment.
+        (global.get $var3)  ;; Variable 'player_accel'
+        (global.set $var23)  ;; Set variable 'vel_x'
+      ) ;; End 'then'
+    ) ;; End 'if'
+    ;; == Generate return code ==
+    (i32.const 0)  ;; Literal value
+    (return)
+  )
+  (func $Fun10 (result i32)
+    (i32.const 79)  ;; Literal string "Test: Continuous Animation"
+    (call $setTitle) ;; Call function SetTitle
+    (call $Fun1)  ;; Call function Reset
+    (drop) ;; Result not used.
+    (call $Fun4)  ;; Call function DrawBoard
+    (drop) ;; Result not used.
+    (i32.const 106)  ;; Literal string "s"
+    (i32.const 108)  ;; Literal string "ActivateShield"
+    (call $addKeyTrigger) ;; Call function AddKeypress
+    (i32.const 123)  ;; Literal string "ArrowUp"
+    (i32.const 131)  ;; Literal string "KeyUp"
+    (call $addKeyTrigger) ;; Call function AddKeypress
+    (i32.const 137)  ;; Literal string "ArrowLeft"
+    (i32.const 147)  ;; Literal string "KeyLeft"
+    (call $addKeyTrigger) ;; Call function AddKeypress
+    (i32.const 155)  ;; Literal string "ArrowDown"
+    (i32.const 165)  ;; Literal string "KeyDown"
+    (call $addKeyTrigger) ;; Call function AddKeypress
+    (i32.const 173)  ;; Literal string "ArrowRight"
+    (i32.const 184)  ;; Literal string "KeyRight"
+    (call $addKeyTrigger) ;; Call function AddKeypress
+    (i32.const 193)  ;; Literal string "UpdateBoard"
+    (call $addAnimFun) ;; Call function AddAnimFun
+    ;; == Generate return code ==
+    (i32.const 0)  ;; Literal value
+    (return)
+  )
+
+  (func $Init
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var0)  ;; Set variable 'player_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var1)  ;; Set variable 'player_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 100)  ;; Literal value
+    (global.set $var2)  ;; Set variable 'player_size'
+    ;; Calculate RHS for assignment.
+    (i32.const 10)  ;; Literal value
+    (global.set $var3)  ;; Set variable 'player_accel'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var4)  ;; Set variable 'item1_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var5)  ;; Set variable 'item1_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 80)  ;; Literal value
+    (global.set $var6)  ;; Set variable 'item1_size'
+    ;; Calculate RHS for assignment.
+    (i32.const 2)  ;; Literal value
+    (global.set $var7)  ;; Set variable 'item1_accel'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var8)  ;; Set variable 'item2_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var9)  ;; Set variable 'item2_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 70)  ;; Literal value
+    (global.set $var10)  ;; Set variable 'item2_size'
+    ;; Calculate RHS for assignment.
+    (i32.const 3)  ;; Literal value
+    (global.set $var11)  ;; Set variable 'item2_accel'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var12)  ;; Set variable 'item3_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var13)  ;; Set variable 'item3_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 60)  ;; Literal value
+    (global.set $var14)  ;; Set variable 'item3_size'
+    ;; Calculate RHS for assignment.
+    (i32.const 4)  ;; Literal value
+    (global.set $var15)  ;; Set variable 'item3_accel'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var16)  ;; Set variable 'item4_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var17)  ;; Set variable 'item4_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 50)  ;; Literal value
+    (global.set $var18)  ;; Set variable 'item4_size'
+    ;; Calculate RHS for assignment.
+    (i32.const 5)  ;; Literal value
+    (global.set $var19)  ;; Set variable 'item4_accel'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var20)  ;; Set variable 'shield_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var21)  ;; Set variable 'shield_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var22)  ;; Set variable 'shield_size'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var23)  ;; Set variable 'vel_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var24)  ;; Set variable 'vel_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var25)  ;; Set variable 'flag1'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var26)  ;; Set variable 'flag2'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var27)  ;; Set variable 'flag3'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var28)  ;; Set variable 'flag4'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var29)  ;; Set variable 'flag5'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var30)  ;; Set variable 'flag6'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var31)  ;; Set variable 'flag7'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var32)  ;; Set variable 'flag8'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var33)  ;; Set variable 'flag9'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var34)  ;; Set variable 'flag10'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var35)  ;; Set variable 'flag11'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var36)  ;; Set variable 'flag12'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var37)  ;; Set variable 'flag13'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var38)  ;; Set variable 'flag14'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var39)  ;; Set variable 'flag15'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var40)  ;; Set variable 'flag16'
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var41)  ;; Set variable 'flag1_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var42)  ;; Set variable 'flag1_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var43)  ;; Set variable 'flag2_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var44)  ;; Set variable 'flag2_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 1750)  ;; Literal value
+    (global.set $var45)  ;; Set variable 'flag3_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var46)  ;; Set variable 'flag3_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 4250)  ;; Literal value
+    (global.set $var47)  ;; Set variable 'flag4_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var48)  ;; Set variable 'flag4_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 3000)  ;; Literal value
+    (global.set $var49)  ;; Set variable 'flag5_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var50)  ;; Set variable 'flag5_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 3000)  ;; Literal value
+    (global.set $var51)  ;; Set variable 'flag6_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var52)  ;; Set variable 'flag6_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 4250)  ;; Literal value
+    (global.set $var53)  ;; Set variable 'flag7_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var54)  ;; Set variable 'flag7_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 1750)  ;; Literal value
+    (global.set $var55)  ;; Set variable 'flag8_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var56)  ;; Set variable 'flag8_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var57)  ;; Set variable 'flag9_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var58)  ;; Set variable 'flag9_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var59)  ;; Set variable 'flag10_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var60)  ;; Set variable 'flag10_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var61)  ;; Set variable 'flag11_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 1750)  ;; Literal value
+    (global.set $var62)  ;; Set variable 'flag11_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var63)  ;; Set variable 'flag12_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 4250)  ;; Literal value
+    (global.set $var64)  ;; Set variable 'flag12_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var65)  ;; Set variable 'flag13_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 3000)  ;; Literal value
+    (global.set $var66)  ;; Set variable 'flag13_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var67)  ;; Set variable 'flag14_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 3000)  ;; Literal value
+    (global.set $var68)  ;; Set variable 'flag14_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var69)  ;; Set variable 'flag15_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 4250)  ;; Literal value
+    (global.set $var70)  ;; Set variable 'flag15_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var71)  ;; Set variable 'flag16_x'
+    ;; Calculate RHS for assignment.
+    (i32.const 1750)  ;; Literal value
+    (global.set $var72)  ;; Set variable 'flag16_y'
+    ;; Calculate RHS for assignment.
+    (i32.const 10)  ;; Literal value
+    (global.set $var73)  ;; Set variable 'flag_size'
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var74)  ;; Set variable 'done'
+  )
+  (start $Init)
+
+  (export "ActivateShield" (func $Fun0))
+  (export "Reset" (func $Fun1))
+  (export "TestInRange" (func $Fun2))
+  (export "TestCollide" (func $Fun3))
+  (export "DrawBoard" (func $Fun4))
+  (export "UpdateBoard" (func $Fun5))
+  (export "KeyUp" (func $Fun6))
+  (export "KeyDown" (func $Fun7))
+  (export "KeyLeft" (func $Fun8))
+  (export "KeyRight" (func $Fun9))
+  (export "Main" (func $Fun10))
+) ;; End module

@@ -1,0 +1,6 @@
+// Test Text
+function Main() : int {
+  SetTitle("Test: Text on canvas.");
+  Text(150, 200, 50, "Text Test Worked!");
+  return 0;
+}

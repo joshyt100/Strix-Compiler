@@ -1,0 +1,6 @@
+// Draw a circle.
+function Main() : int {
+  SetTitle("Test: Solid, Black Circle");
+  Circle(300, 300, 200);
+  return 0;
+}

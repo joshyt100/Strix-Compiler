@@ -1,0 +1,284 @@
+int player_x = 0;  int player_y = 0; int player_size = 100;  int player_accel = 10;
+int item1_x = 0;   int item1_y = 0;  int item1_size = 80;    int item1_accel = 2;
+int item2_x = 0;   int item2_y = 0;  int item2_size = 70;    int item2_accel = 3;
+int item3_x = 0;   int item3_y = 0;  int item3_size = 60;    int item3_accel = 4;
+int item4_x = 0;   int item4_y = 0;  int item4_size = 50;    int item4_accel = 5;
+int shield_x = 0;  int shield_y = 0; int shield_size = 0;
+int vel_x = 0;     int vel_y = 0;
+
+int flag1 = 0;  int flag2 = 0;  int flag3 = 0;  int flag4 = 0;
+int flag5 = 0;  int flag6 = 0;  int flag7 = 0;  int flag8 = 0;
+int flag9 = 0;  int flag10 = 0; int flag11 = 0; int flag12 = 0;
+int flag13 = 0; int flag14 = 0; int flag15 = 0; int flag16 = 0;
+
+int flag1_x =   500; int flag1_y =  500;   int flag2_x = 5500; int flag2_y  = 5500;
+int flag3_x =  1750; int flag3_y =  500;   int flag4_x = 4250; int flag4_y  = 5500;
+int flag5_x =  3000; int flag5_y =  500;   int flag6_x = 3000; int flag6_y  = 5500;
+int flag7_x =  4250; int flag7_y =  500;   int flag8_x = 1750; int flag8_y  = 5500;
+int flag9_x =  5500; int flag9_y =  500;   int flag10_x = 500; int flag10_y = 5500;
+int flag11_x = 5500; int flag11_y = 1750;  int flag12_x = 500; int flag12_y = 4250;
+int flag13_x = 5500; int flag13_y = 3000;  int flag14_x = 500; int flag14_y = 3000;
+int flag15_x = 5500; int flag15_y = 4250;  int flag16_x = 500; int flag16_y = 1750;
+
+int flag_size = 10;
+int done = 0;
+
+function ActivateShield() : int {
+  // If a shield already exists, cannot make a new one.
+  if (shield_size > 0) return 0;
+  shield_x = player_x;
+  shield_y = player_y;
+  shield_size = 800;
+  return 1;
+}
+
+function Reset() : int
+{
+  player_x = 3000;  player_y = 3000;
+  item1_x  = 1000;  item1_y  = 1000;
+  item2_x  = 5000;  item2_y  = 1000;
+  item3_x  = 1000;  item3_y  = 5000;
+  item4_x  = 5000;  item4_y  = 5000;
+  vel_x    = 0;     vel_y    = 0;
+  shield_size = 0;
+
+  flag1 = 0;  flag2 = 0;  flag3 = 0;  flag4 = 0;
+  flag5 = 0;  flag6 = 0;  flag7 = 0;  flag8 = 0;
+  flag9 = 0;  flag10 = 0; flag11 = 0; flag12 = 0;
+  flag13 = 0; flag14 = 0; flag15 = 0; flag16 = 0;
+
+  ActivateShield();
+
+  return 0;
+}
+
+function TestInRange(int x1, int y1, int x2, int y2, int max_dist) : int
+{
+  int max_sqr = max_dist * max_dist;
+
+  int x_dist = x1 - x2;
+  int x_sqr = x_dist * x_dist;
+
+  int y_dist = y1 - y2;
+  int y_sqr = y_dist * y_dist;
+
+  return max_sqr >= x_sqr + y_sqr;
+}
+
+function TestCollide(int x1, int y1, int r1, int x2, int y2, int r2) : int
+{
+  if (r1 <= 0) return 0;
+  if (r2 <= 0) return 0;
+
+  return TestInRange(x1, y1, x2, y2, r1+r2);
+}
+
+function DrawBoard() : int {
+  // Draw Background
+  FillColor("black");
+  FillColor("black");
+  LineWidth(6);
+  Rect(0,0,600,600);
+
+  // Draw Shield
+  if (shield_size > 0) {
+    LineColor("#6e6a00ff");
+    FillColor("#6e6a00d6");
+    LineWidth(1);
+    Circle(shield_x/10, shield_y/10, shield_size/10);
+  }
+
+  // Draw Tagged Flags
+  FillColor("#303030");
+  LineColor("#808080");
+  LineWidth(4);
+  if (flag1)  Circle(flag1_x/10, flag1_y/10, flag_size);
+  if (flag2)  Circle(flag2_x/10, flag2_y/10, flag_size);
+  if (flag3)  Circle(flag3_x/10, flag3_y/10, flag_size);
+  if (flag4)  Circle(flag4_x/10, flag4_y/10, flag_size);
+  if (flag5)  Circle(flag5_x/10, flag5_y/10, flag_size);
+  if (flag6)  Circle(flag6_x/10, flag6_y/10, flag_size);
+  if (flag7)  Circle(flag7_x/10, flag7_y/10, flag_size);
+  if (flag8)  Circle(flag8_x/10, flag8_y/10, flag_size);
+  if (flag9)  Circle(flag9_x/10, flag9_y/10, flag_size);
+  if (flag10) Circle(flag10_x/10, flag10_y/10, flag_size);
+  if (flag11) Circle(flag11_x/10, flag11_y/10, flag_size);
+  if (flag12) Circle(flag12_x/10, flag12_y/10, flag_size);
+  if (flag13) Circle(flag13_x/10, flag13_y/10, flag_size);
+  if (flag14) Circle(flag14_x/10, flag14_y/10, flag_size);
+  if (flag15) Circle(flag15_x/10, flag15_y/10, flag_size);
+  if (flag16) Circle(flag16_x/10, flag16_y/10, flag_size);
+
+  // Draw NEXT flag.
+  FillColor("green");
+  LineColor("white");
+  LineWidth(1);
+  if (!flag1)       Circle(flag1_x/10, flag1_y/10, flag_size);
+  else if (!flag2)  Circle(flag2_x/10, flag2_y/10, flag_size);
+  else if (!flag3)  Circle(flag3_x/10, flag3_y/10, flag_size);
+  else if (!flag4)  Circle(flag4_x/10, flag4_y/10, flag_size);
+  else if (!flag5)  Circle(flag5_x/10, flag5_y/10, flag_size);
+  else if (!flag6)  Circle(flag6_x/10, flag6_y/10, flag_size);
+  else if (!flag7)  Circle(flag7_x/10, flag7_y/10, flag_size);
+  else if (!flag8)  Circle(flag8_x/10, flag8_y/10, flag_size);
+  else if (!flag9)  Circle(flag9_x/10, flag9_y/10, flag_size);
+  else if (!flag10) Circle(flag10_x/10, flag10_y/10, flag_size);
+  else if (!flag11) Circle(flag11_x/10, flag11_y/10, flag_size);
+  else if (!flag12) Circle(flag12_x/10, flag12_y/10, flag_size);
+  else if (!flag13) Circle(flag13_x/10, flag13_y/10, flag_size);
+  else if (!flag14) Circle(flag14_x/10, flag14_y/10, flag_size);
+  else if (!flag15) Circle(flag15_x/10, flag15_y/10, flag_size);
+  else if (!flag16) Circle(flag16_x/10, flag16_y/10, flag_size);
+
+  // Draw player
+  LineColor("white");
+  FillColor("blue");
+  LineWidth(2);
+  Circle(player_x/10, player_y/10, player_size/10);
+
+  // Draw Items
+  LineColor("white");
+  FillColor("red");
+  LineWidth(1);
+  Circle(item1_x/10, item1_y/10, item1_size/10);
+  Circle(item2_x/10, item2_y/10, item2_size/10);
+  Circle(item3_x/10, item3_y/10, item3_size/10);
+  Circle(item4_x/10, item4_y/10, item4_size/10);
+
+  //Indicate a winner!
+  if (flag16) {
+    done = 1;
+    FillColor("black");
+    LineColor("white");
+    LineWidth(5);
+    Rect(180, 30, 240, 60);
+    FillColor("yellow");
+    Text(190, 40, 50, "You Win!");
+  }
+
+  return 0;
+}
+
+function UpdateBoard(double time) : int {
+  if (done) return 0;
+
+  // Test item collisions with player or shield.
+  int old_x = item1_x;
+  int old_y = item1_y;
+  if (item1_x < player_x) item1_x = item1_x + 2; else item1_x = item1_x - 2;
+  if (item1_y < player_y) item1_y = item1_y + 2; else item1_y = item1_y - 2;
+  if (TestCollide(player_x, player_y, player_size, item1_x, item1_y, item1_size)) Reset();
+  if (TestCollide(shield_x, shield_y, shield_size, item1_x, item1_y, item1_size)) {
+    item1_x = old_x; item1_y = old_y;
+  }
+
+  old_x = item2_x;  old_y = item2_y;
+  if (item2_x < player_x) item2_x = item2_x + 3; else item2_x = item2_x - 3;
+  if (item2_y < player_y) item2_y = item2_y + 3; else item2_y = item2_y - 3;
+  if (TestCollide(player_x, player_y, player_size, item2_x, item2_y, item2_size)) Reset();
+  if (TestCollide(shield_x, shield_y, shield_size, item2_x, item2_y, item2_size)) {
+    item2_x = old_x; item2_y = old_y;
+  }
+
+  old_x = item3_x;  old_y = item3_y;
+  if (item3_x < player_x) item3_x = item3_x + 4; else item3_x = item3_x - 4;
+  if (item3_y < player_y) item3_y = item3_y + 4; else item3_y = item3_y - 4;
+  if (TestCollide(player_x, player_y, player_size, item3_x, item3_y, item3_size)) Reset();
+  if (TestCollide(shield_x, shield_y, shield_size, item3_x, item3_y, item3_size)) {
+    item3_x = old_x; item3_y = old_y;
+  }
+
+  old_x = item4_x;  old_y = item4_y;
+  if (item4_x < player_x) item4_x = item4_x + 5; else item4_x = item4_x - 5;
+  if (item4_y < player_y) item4_y = item4_y + 5; else item4_y = item4_y - 5;
+  if (TestCollide(player_x, player_y, player_size, item4_x, item4_y, item4_size)) Reset();
+  if (TestCollide(shield_x, shield_y, shield_size, item4_x, item4_y, item4_size)) {
+    item4_x = old_x; item4_y = old_y;
+  }
+
+  // Move player
+  player_x = player_x + vel_x;
+  if (player_x < 0) { player_x = 0; vel_x = 0; }
+  if (player_x > 6000) { player_x = 6000; vel_x = 0; }
+  player_y = player_y + vel_y;
+  if (player_y < 0) { player_y = 0; vel_y = 0; }
+  if (player_y > 6000) { player_y = 6000; vel_y = 0; }
+
+  // Test player tagging of flags.
+  if (!flag1) {
+    if (TestCollide(player_x, player_y, player_size, flag1_x, flag1_y, flag_size)) flag1 = 1;
+  } else if (!flag2) {
+    if (TestCollide(player_x, player_y, player_size, flag2_x, flag2_y, flag_size)) flag2 = 1;
+  } else if (!flag3) {
+    if (TestCollide(player_x, player_y, player_size, flag3_x, flag3_y, flag_size)) flag3 = 1;
+  } else if (!flag4) {
+    if (TestCollide(player_x, player_y, player_size, flag4_x, flag4_y, flag_size)) flag4 = 1;
+  } else if (!flag5) {
+    if (TestCollide(player_x, player_y, player_size, flag5_x, flag5_y, flag_size)) flag5 = 1;
+  } else if (!flag6) {
+    if (TestCollide(player_x, player_y, player_size, flag6_x, flag6_y, flag_size)) flag6 = 1;
+  } else if (!flag7) {
+    if (TestCollide(player_x, player_y, player_size, flag7_x, flag7_y, flag_size)) flag7 = 1;
+  } else if (!flag8) {
+    if (TestCollide(player_x, player_y, player_size, flag8_x, flag8_y, flag_size)) flag8 = 1;
+  } else if (!flag9) {
+    if (TestCollide(player_x, player_y, player_size, flag9_x, flag9_y, flag_size)) flag9 = 1;
+  } else if (!flag10) {
+    if (TestCollide(player_x, player_y, player_size, flag10_x, flag10_y, flag_size)) flag10 = 1;
+  } else if (!flag11) {
+    if (TestCollide(player_x, player_y, player_size, flag11_x, flag11_y, flag_size)) flag11 = 1;
+  } else if (!flag12) {
+    if (TestCollide(player_x, player_y, player_size, flag12_x, flag12_y, flag_size)) flag12 = 1;
+  } else if (!flag13) {
+    if (TestCollide(player_x, player_y, player_size, flag13_x, flag13_y, flag_size)) flag13 = 1;
+  } else if (!flag14) {
+    if (TestCollide(player_x, player_y, player_size, flag14_x, flag14_y, flag_size)) flag14 = 1;
+  } else if (!flag15) {
+    if (TestCollide(player_x, player_y, player_size, flag15_x, flag15_y, flag_size)) flag15 = 1;
+  } else if (!flag16) {
+    if (TestCollide(player_x, player_y, player_size, flag16_x, flag16_y, flag_size)) flag16 = 1;
+  }
+
+  // Shrink shield
+  if (shield_size > 0) shield_size = shield_size - 1;
+
+  DrawBoard();
+  return 0;
+}
+
+function KeyUp() : int {
+  vel_y = vel_y - player_accel;
+  if (vel_y < -player_accel) vel_y = -player_accel;
+  return 0;
+}
+function KeyDown() : int {
+  vel_y = vel_y + player_accel;
+  if (vel_y > player_accel) vel_y = player_accel;
+  return 0;
+}
+function KeyLeft() : int {
+  vel_x = vel_x - player_accel;
+  if (vel_x < -player_accel) vel_x = -player_accel;
+  return 0;
+}
+function KeyRight() : int {
+  vel_x = vel_x + player_accel;
+  if (vel_x > player_accel) vel_x = player_accel;
+  return 0;
+}
+
+function Main() : int {
+  SetTitle("Test: Continuous Animation");
+  Reset();
+  DrawBoard();
+
+  AddKeypress("s", "ActivateShield");
+  AddKeypress("ArrowUp",    "KeyUp");
+  AddKeypress("ArrowLeft",  "KeyLeft");
+  AddKeypress("ArrowDown",  "KeyDown");
+  AddKeypress("ArrowRight", "KeyRight");
+
+  AddAnimFun("UpdateBoard");
+
+  return 0;
+}

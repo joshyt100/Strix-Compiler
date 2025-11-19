@@ -1,0 +1,46 @@
+// Test global strings.
+int num_rows = 10;
+int num_cols = 10;
+string layout =
+  "##########" +
+  "+ #      #" +
+  "# # ## # #" +
+  "# # #  # #" +
+  "# # # ####" +
+  "#   #    #" +
+  "# ###### #" +
+  "# #   #  #" +
+  "#   # # ##" +
+  "#######-##";
+
+int cell_width = 600 / num_cols;
+int cell_height = 600 / num_rows;
+
+// Draw an X in the next open space.
+function DrawCell(int row, int col, string color) : int { 
+  LineColor("black");
+  FillColor(color);
+  LineWidth(1);
+  Rect(col*cell_width,row*cell_height,cell_height,cell_height);
+  return 0;
+}
+function Main() : int {
+  SetTitle("Test: Drawing a maze based on a string.");
+
+  int row = 0;
+  while (row < num_rows) {
+    int col = 0;
+    while (col < num_cols) {
+      int id = row * num_cols + col;
+      string cell_color = "white";
+      if (layout[id] == '#') cell_color = "#202020";
+      else if (layout[id] == '+') cell_color = "green";
+      else if (layout[id] == '-') cell_color = "red";
+      DrawCell(row, col, cell_color);
+      col = col+1;
+    }
+    row = row + 1;
+  }
+
+  return 0;
+}

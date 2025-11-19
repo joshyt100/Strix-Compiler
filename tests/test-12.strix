@@ -1,0 +1,163 @@
+string layout =
+"###################################+#" +
+"# #       #       #     #         # #" +
+"# # ##### # ### ##### ### ### ### # #" +
+"#       #   # #     #     # # #   # #" +
+"##### # ##### ##### ### # # # ##### #" +
+"#   # #       #     # # # # #     # #" +
+"# # ####### # # ##### ### # ##### # #" +
+"# #       # # #   #     #     #   # #" +
+"# ####### ### ### # ### ##### # ### #" +
+"#     #   # #   # #   #     # #     #" +
+"# ### ### # ### # ##### # # # #######" +
+"#   #   # # #   #   #   # # #   #   #" +
+"####### # # # ##### # ### # ### ### #" +
+"#     # #     #   # #   # #   #     #" +
+"# ### # ##### ### # ### ### ####### #" +
+"# #   #     #     #   # # #       # #" +
+"# # ##### # ### ##### # # ####### # #" +
+"# #     # # # # #     #       # #   #" +
+"# ##### # # # ### ##### ##### # #####" +
+"# #   # # #     #     # #   #       #" +
+"# # ### ### ### ##### ### # ##### # #" +
+"# #         #     #       #       # #" +
+"#-###################################";
+int num_rows = 23;   // Overall maze size
+int num_cols = 37;
+int player_row = 22; // Player position
+int player_col = 1;
+int lights = 0;      // Are the lights currently turned on?
+int solved = 0;
+
+int cell_width = 600 / num_cols;
+int cell_height = 600 / num_rows;
+
+// Helper functions
+function IntToString(int val) : string {
+  if (val == 0) return "0";
+  string out_string = "";
+  if (val < 0) {
+    out_string = "-";
+    val = -val;
+  }
+  if (val >= 10) out_string = out_string + IntToString(val/10);
+  return out_string + ('0' + val % 10);
+}
+
+// Draw an X in the next open space.
+function DrawCell(int row, int col, string color) : int { 
+  LineColor("black");
+  FillColor(color);
+  LineWidth(1);
+  Rect(col*cell_width,row*cell_height,cell_width,cell_height);
+  return 0;
+}
+
+function Abs(int in) : int {
+  if (in < 0) return -in;
+  return in;
+}
+
+function PlayerDistance(int row, int col) : int {
+  int x_dist = col - player_col;
+  int x_sqr = x_dist * x_dist;
+
+  int y_dist = row - player_row;
+  int y_sqr = y_dist * y_dist;
+
+  return x_sqr + y_sqr;
+}
+
+function DrawBoard() : int {
+  int row = 0;
+  while (row < num_rows) {
+    int col = 0;
+    while (col < num_cols) {
+      int id = row * num_cols + col;
+      int dist = PlayerDistance(row, col);
+
+      // If this is the player, make the cell blue.
+      if (dist == 0) DrawCell(row, col, "blue");
+      else if ((lights == 0) * (dist >= 16)) DrawCell(row, col, "black");
+
+      // Otherwise color it based on the cell type.
+      else if (layout[id] == '#') DrawCell(row, col, "#303030");
+      else if (layout[id] == '+') DrawCell(row, col, "green");
+      else if (layout[id] == '-') DrawCell(row, col, "red");
+      else DrawCell(row, col, "white");
+
+      col = col+1;
+    }
+    row = row + 1;
+  }
+
+  if (solved) {
+    FillColor("black");
+    LineColor("white");
+    LineWidth(5);
+    Rect(180, 30, 240, 60);
+    FillColor("yellow");
+    Text(190, 40, 50, "You Win!");
+  }
+
+  return 0;
+}
+
+function TryMove(int new_row, int new_col) : int {
+  if (new_row < 0) return 0;
+  if (new_row >= num_rows) return 0;
+  if (new_col < 0) return 0;
+  if (new_col >= num_cols) return 0;
+  int new_id = new_row * num_cols + new_col;
+
+  SetTitle("Test ID: (" + IntToString(new_id) + ")");
+
+  if (layout[new_id] != '#') {
+    player_row = new_row;
+    player_col = new_col;
+    solved = (layout[new_id] == '+');
+    DrawBoard();
+
+    return 1;
+  }
+
+  return 0;
+}
+
+function KeyUp() : int {
+  return TryMove(player_row-1, player_col);
+}
+function KeyDown() : int {
+  return TryMove(player_row+1, player_col);
+}
+function KeyLeft() : int {
+  return TryMove(player_row, player_col-1);
+}
+function KeyRight() : int {
+  return TryMove(player_row, player_col+1);
+}
+
+function ToggleLights() : int {
+  lights = !lights;
+  DrawBoard();
+  return lights;
+}
+
+function Main() : int {
+  SetTitle("Test: Larger maze app with limited visibility");
+  DrawBoard();
+
+  AddKeypress("w", "KeyUp");
+  AddKeypress("a", "KeyLeft");
+  AddKeypress("s", "KeyDown");
+  AddKeypress("d", "KeyRight");
+  AddKeypress("ArrowUp",    "KeyUp");
+  AddKeypress("ArrowLeft",  "KeyLeft");
+  AddKeypress("ArrowDown",  "KeyDown");
+  AddKeypress("ArrowRight", "KeyRight");
+
+  AddKeypress("l", "ToggleLights");
+  AddButton("Toggle Lights!", "ToggleLights");
+
+  return 0;
+}

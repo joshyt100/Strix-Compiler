@@ -1,0 +1,6 @@
+// Test character literals
+function Main() : int {
+  SetTitle("Test: Character literals.");
+  Text(10, 200, 50, "Is this an A? : " + 'A');
+  return 0;  
+}

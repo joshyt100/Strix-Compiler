@@ -1,0 +1,98 @@
+// Test keyboard input.
+int num_rows = 10;
+int num_cols = 10;
+int player_row = 1;
+int player_col = 0;
+
+string layout =
+  "##########" +
+  "+ #      #" +
+  "# # ## # #" +
+  "# # #  # #" +
+  "# # # ####" +
+  "#   #    #" +
+  "# ###### #" +
+  "# #   #  #" +
+  "#   # # ##" +
+  "#######-##";
+
+int cell_width = 600 / num_cols;
+int cell_height = 600 / num_rows;
+
+// Draw an X in the next open space.
+function DrawCell(int row, int col, string color) : int { 
+  LineColor("black");
+  FillColor(color);
+  LineWidth(1);
+  Rect(col*cell_width,row*cell_height,cell_height,cell_height);
+  return 0;
+}
+
+function DrawBoard() : int {
+  int row = 0;
+  while (row < num_rows) {
+    int col = 0;
+    while (col < num_cols) {
+      int id = row * num_cols + col;
+      string cell_color = "white";
+      if (layout[id] == '#') cell_color = "#202020";
+      else if (layout[id] == '+') cell_color = "green";
+      else if (layout[id] == '-') cell_color = "red";
+
+      // If this is the player, override the above and make the cell blue.
+      if ((row == player_row) * (col == player_col)) cell_color = "blue";
+
+      DrawCell(row, col, cell_color);
+      col = col+1;
+    }
+    row = row + 1;
+  }
+  return 0;
+}
+
+function TryMove(int new_row, int new_col) : int {
+  if (new_row < 0) return 0;
+  if (new_row >= num_rows) return 0;
+  if (new_col < 0) return 0;
+  if (new_col >= num_cols) return 0;
+  int new_id = new_row * num_cols + new_col;
+
+  if (layout[new_id] != '#') {
+    player_row = new_row;
+    player_col = new_col;
+    DrawBoard();
+    return 1;
+  }
+
+  return 0;
+}
+
+function KeyUp() : int {
+  return TryMove(player_row-1, player_col);
+}
+function KeyDown() : int {
+  return TryMove(player_row+1, player_col);
+}
+function KeyLeft() : int {
+  return TryMove(player_row, player_col-1);
+}
+function KeyRight() : int {
+  return TryMove(player_row, player_col+1);
+}
+
+
+function Main() : int {
+  SetTitle("Test: Keyboard input");
+  DrawBoard();
+
+  AddKeypress("w", "KeyUp");
+  AddKeypress("a", "KeyLeft");
+  AddKeypress("s", "KeyDown");
+  AddKeypress("d", "KeyRight");
+  AddKeypress("ArrowUp",    "KeyUp");
+  AddKeypress("ArrowLeft",  "KeyLeft");
+  AddKeypress("ArrowDown",  "KeyDown");
+  AddKeypress("ArrowRight", "KeyRight");
+
+  return 0;
+}
