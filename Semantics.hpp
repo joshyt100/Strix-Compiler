@@ -1,3 +1,4 @@
+
 #pragma once
 
 // Visitor pattern for moving though an AST and ensuring all semantics are
@@ -37,6 +38,19 @@ private:
     if (found_type == Type::STRING) {
       node.Error(error, "; type ", TypeToName(found_type), " found.");
     }
+  }
+
+  bool IsBuiltin(const std::string &name) const {
+    return name == "AddButton" || name == "AddKeypress" ||
+           name == "AddClickFun" || name == "AddMoveFun" ||
+           name == "AddAnimFun" || name == "SetTitle" || name == "LineColor" ||
+           name == "FillColor" || name == "LineWidth" || name == "Line" ||
+           name == "Rect" || name == "Circle" || name == "Text";
+  }
+
+  void CheckBuiltinCall(ASTNode &node) {
+    const std::string &name = node.GetExtra(); // we didn't store name here,
+                                               // so use token lexeme instead
   }
 
 public:
@@ -123,6 +137,162 @@ public:
   }
 
   Type Analyze_CALL(ASTNode &node) {
+    size_t id = node.GetSymbolID();
+
+    if (id == SymbolTable::NO_ID) {
+      const std::string name = node.GetLexeme();
+
+      if (!IsBuiltin(name)) {
+        node.Error("Unknown function '", name, "'.");
+      }
+
+      if (name == "AddButton") {
+        if (node.NumChildren() != 2) {
+          node.Error(
+              "Function call to 'AddButton' expected 2 arguments, but found ",
+              node.NumChildren(), ".");
+        }
+        Type t0 = Analyze(node.Child(0));
+        Type t1 = Analyze(node.Child(1));
+        if (t0 != Type::STRING) {
+          node.Error("First argument to 'AddButton' must be of type string, "
+                     "but found type ",
+                     TypeToName(t0), ".");
+        }
+        if (t1 != Type::STRING) {
+          node.Error("Second argument to 'AddButton' must be of type string, "
+                     "but found type ",
+                     TypeToName(t1), ".");
+        }
+        return Type::NONE;
+      }
+
+      if (name == "AddKeypress") {
+        if (node.NumChildren() != 2) {
+          node.Error(
+              "Function call to 'AddKeypress' expected 2 arguments, but found ",
+              node.NumChildren(), ".");
+        }
+        Type t0 = Analyze(node.Child(0));
+        Type t1 = Analyze(node.Child(1));
+        if (t0 != Type::STRING) {
+          node.Error("First argument to 'AddKeypress' must be of type string, "
+                     "but found type ",
+                     TypeToName(t0), ".");
+        }
+        if (t1 != Type::STRING) {
+          node.Error("Second argument to 'AddKeypress' must be of type string, "
+                     "but found type ",
+                     TypeToName(t1), ".");
+        }
+        return Type::NONE;
+      }
+
+      if (name == "AddClickFun" || name == "AddMoveFun" ||
+          name == "AddAnimFun") {
+        if (node.NumChildren() != 1) {
+          node.Error("Function call to '", name,
+                     "' expected 1 argument, but found ", node.NumChildren(),
+                     ".");
+        }
+        Type t0 = Analyze(node.Child(0));
+        if (t0 != Type::STRING) {
+          node.Error("First argument to '", name,
+                     "' must be of type string, but found type ",
+                     TypeToName(t0), ".");
+        }
+        return Type::NONE;
+      }
+
+      if (name == "SetTitle" || name == "LineColor" || name == "FillColor") {
+        if (node.NumChildren() != 1) {
+          node.Error("Function call to '", name,
+                     "' expected 1 argument, but found ", node.NumChildren(),
+                     ".");
+        }
+        Type t0 = Analyze(node.Child(0));
+        if (t0 != Type::STRING) {
+          node.Error("First argument to '", name,
+                     "' must be of type string, but found type ",
+                     TypeToName(t0), ".");
+        }
+        return Type::NONE;
+      }
+
+      if (name == "LineWidth") {
+        if (node.NumChildren() != 1) {
+          node.Error(
+              "Function call to 'LineWidth' expected 1 argument, but found ",
+              node.NumChildren(), ".");
+        }
+        Type t0 = Analyze(node.Child(0));
+        RequireInt(node.Child(0), t0,
+                   "Argument to 'LineWidth' must have type int");
+        return Type::NONE;
+      }
+
+      if (name == "Line") {
+        if (node.NumChildren() != 4) {
+          node.Error("Function call to 'Line' expected 4 arguments, but found ",
+                     node.NumChildren(), ".");
+        }
+        for (size_t i = 0; i < 4; ++i) {
+          Type t = Analyze(node.Child(i));
+          RequireInt(node.Child(i), t,
+                     "Arguments to 'Line' must all have type int");
+        }
+        return Type::NONE;
+      }
+
+      if (name == "Rect") {
+        if (node.NumChildren() != 4) {
+          node.Error("Function call to 'Rect' expected 4 arguments, but found ",
+                     node.NumChildren(), ".");
+        }
+        for (size_t i = 0; i < 4; ++i) {
+          Type t = Analyze(node.Child(i));
+          RequireInt(node.Child(i), t,
+                     "Arguments to 'Rect' must all have type int");
+        }
+        return Type::NONE;
+      }
+
+      if (name == "Circle") {
+        if (node.NumChildren() != 3) {
+          node.Error(
+              "Function call to 'Circle' expected 3 arguments, but found ",
+              node.NumChildren(), ".");
+        }
+        for (size_t i = 0; i < 3; ++i) {
+          Type t = Analyze(node.Child(i));
+          RequireInt(node.Child(i), t,
+                     "Arguments to 'Circle' must all have type int");
+        }
+        return Type::NONE;
+      }
+
+      if (name == "Text") {
+        if (node.NumChildren() != 4) {
+          node.Error("Function call to 'Text' expected 4 arguments, but found ",
+                     node.NumChildren(), ".");
+        }
+        for (size_t i = 0; i < 3; ++i) {
+          Type t = Analyze(node.Child(i));
+          RequireInt(node.Child(i), t,
+                     "The first three arguments to 'Text' must have type int");
+        }
+        Type t3 = Analyze(node.Child(3));
+        if (t3 != Type::STRING) {
+          node.Error("Fourth argument to 'Text' must be of type string, but "
+                     "found type ",
+                     TypeToName(t3), ".");
+        }
+        return Type::NONE;
+      }
+
+      node.Error("Unknown built-in function '", name, "'.");
+    }
+
     const FunInfo &fun_info = symbols.GetFunInfo(node.GetSymbolID());
 
     // Make sure we have the correct number of arguments.

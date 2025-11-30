@@ -1,0 +1,15 @@
+current/test-06.wat:194:6: error: type mismatch in drop, expected [any] but got []
+    (drop) ;; Result not used.
+     ^^^^
+current/test-06.wat:197:6: error: type mismatch in drop, expected [any] but got []
+    (drop) ;; Result not used.
+     ^^^^
+current/test-06.wat:207:6: error: type mismatch in drop, expected [any] but got []
+    (drop) ;; Result not used.
+     ^^^^
+current/test-06.wat:217:6: error: type mismatch in drop, expected [any] but got []
+    (drop) ;; Result not used.
+     ^^^^
+current/test-06.wat:288:6: error: type mismatch in drop, expected [any] but got []
+    (drop) ;; Result not used.
+     ^^^^

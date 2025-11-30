@@ -313,9 +313,37 @@ public:
 
   // Translate all functions into WebAssembly Text (WAT) output
   void ToWAT() {
+
     std::cout << "(module\n"
               << "  (import \"Math\" \"pow\" (func $pow (param f64 f64) "
-                 "(result f64)))\n";
+                 "(result f64)))\n"
+              // New project 5 imports
+              << "  (import \"host\" \"addButton\"     (func $addButton  "
+                 "(param i32 i32)))\n"
+              << "  (import \"host\" \"addKeyTrigger\" (func $addKeyTrigger "
+                 "(param i32 i32)))\n"
+              << "  (import \"host\" \"addClickFun\"   (func $addClickFun "
+                 "(param i32)))\n"
+              << "  (import \"host\" \"addMoveFun\"    (func $addMoveFun  "
+                 "(param i32)))\n"
+              << "  (import \"host\" \"addAnimFun\"    (func $addAnimFun "
+                 "(param i32)))\n"
+              << "  (import \"host\" \"setTitle\"       (func $setTitle       "
+                 "(param i32)))\n"
+              << "  (import \"host\" \"setStrokeColor\" (func $setStrokeColor "
+                 "(param i32)))\n"
+              << "  (import \"host\" \"setFillColor\"   (func $setFillColor   "
+                 "(param i32)))\n"
+              << "  (import \"host\" \"setLineWidth\"   (func $setLineWidth   "
+                 "(param i32)))\n"
+              << "  (import \"host\" \"drawLine\"       (func $drawLine   "
+                 "(param i32 i32 i32 i32)))\n"
+              << "  (import \"host\" \"drawRect\"       (func $drawRect   "
+                 "(param i32 i32 i32 i32)))\n"
+              << "  (import \"host\" \"drawCircle\"     (func $drawCircle "
+                 "(param i32 i32 i32)))\n"
+              << "  (import \"host\" \"drawText\"       (func $drawText   "
+                 "(param i32 i32 i32 i32)))\n";
 
     symbols.PrintWATMemory();
     PrintWATHelpers(); // Print all of the helper functions for dealing with
@@ -439,14 +467,50 @@ public:
   }
 
   void ToWAT_Call(ASTNode &node, bool need_result) {
-    ChildrenToWAT(node, true); // Set up all of the arguments.
+    ChildrenToWAT(node, true);
+
     const FunInfo &fun_info = symbols.GetFunInfo(node.GetSymbolID());
-    AddCode("(call $Fun", fun_info.fun_id, ")  ;; Call function ",
-            fun_info.name);
-    if (!need_result)
+    std::string fun_name = node.GetLexeme();
+
+    std::string wat_label;
+    if (fun_name == "AddButton")
+      wat_label = "$addButton";
+    else if (fun_name == "AddKeypress")
+      wat_label = "$addKeyTrigger";
+    else if (fun_name == "AddClickFun")
+      wat_label = "$addClickFun";
+    else if (fun_name == "AddMoveFun")
+      wat_label = "$addMoveFun";
+    else if (fun_name == "AddAnimFun")
+      wat_label = "$addAnimFun";
+
+    else if (fun_name == "SetTitle")
+      wat_label = "$setTitle";
+    else if (fun_name == "LineColor")
+      wat_label = "$setStrokeColor";
+    else if (fun_name == "FillColor")
+      wat_label = "$setFillColor";
+    else if (fun_name == "LineWidth")
+      wat_label = "$setLineWidth";
+
+    else if (fun_name == "Line")
+      wat_label = "$drawLine";
+    else if (fun_name == "Rect")
+      wat_label = "$drawRect";
+    else if (fun_name == "Circle")
+      wat_label = "$drawCircle";
+    else if (fun_name == "Text")
+      wat_label = "$drawText";
+
+    else {
+      wat_label = "$Fun" + std::to_string(fun_info.fun_id);
+    }
+
+    AddCode("(call ", wat_label, ")  ;; Call function ", fun_name);
+
+    if (!need_result && fun_info.return_type != Type::NONE)
       AddCode("(drop) ;; Result not used.");
   }
-
   void ToWAT_Continue([[maybe_unused]] ASTNode &node,
                       [[maybe_unused]] bool need_result) {
     assert(need_result == false);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
 #include "AST.hpp"
 #include "SymbolTable.hpp"
@@ -19,6 +20,44 @@ private:
 
   std::unordered_map<std::string, OpInfo> op_map;
   size_t max_prec_level = 0;
+
+  bool IsBuiltinFunction(const std::string &name) const {
+    return name == "AddButton" || name == "AddKeypress" ||
+           name == "AddClickFun" || name == "AddMoveFun" ||
+           name == "AddAnimFun" || name == "SetTitle" || name == "LineColor" ||
+           name == "FillColor" || name == "LineWidth" || name == "Line" ||
+           name == "Rect" || name == "Circle" || name == "Text";
+  }
+
+  size_t GetBuiltinParamCount(const std::string &name) const {
+    if (name == "AddButton")
+      return 2;
+    if (name == "AddKeypress")
+      return 2;
+    if (name == "AddClickFun")
+      return 1;
+    if (name == "AddMoveFun")
+      return 1;
+    if (name == "AddAnimFun")
+      return 1;
+    if (name == "SetTitle")
+      return 1;
+    if (name == "LineColor")
+      return 1;
+    if (name == "FillColor")
+      return 1;
+    if (name == "LineWidth")
+      return 1;
+    if (name == "Line")
+      return 4;
+    if (name == "Rect")
+      return 4;
+    if (name == "Circle")
+      return 3;
+    if (name == "Text")
+      return 4;
+    return 0;
+  }
 
   [[nodiscard]] ASTNode MakeVarNode(Token var_token) const {
     size_t var_id = symbols.GetSymbolID(var_token);
@@ -114,6 +153,21 @@ private:
         // Collect arguments...
         lexer.Use('(', "Call to function '", token.lexeme, "' must have '('.");
         size_t arg_count = symbols.GetFunParams(fun_id).size();
+        for (size_t arg_id = 0; arg_id < arg_count; ++arg_id) {
+          if (arg_id)
+            lexer.Use(',');
+          out_node.AddChild(Parse_Expression());
+        }
+        lexer.Use(')', "Missing closing ')' in call to function '",
+                  token.lexeme, "'.");
+      }
+
+      // Otherwise check if this is a built-in function call.
+      else if (IsBuiltinFunction(token.lexeme)) {
+        out_node = ASTNode_Call(token, SymbolTable::NO_ID);
+
+        lexer.Use('(', "Call to function '", token.lexeme, "' must have '('.");
+        size_t arg_count = GetBuiltinParamCount(token.lexeme);
         for (size_t arg_id = 0; arg_id < arg_count; ++arg_id) {
           if (arg_id)
             lexer.Use(',');
