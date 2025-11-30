@@ -5,114 +5,190 @@
 #include <string>
 #include <vector>
 
+#include "helpers.hpp"
 #include "lexer.hpp"
-#include "SymbolTable.hpp"
 
-// As possible base class for ASTNodes 
-// NOTE: You may absolutely use your own!
+using emplex::Token;
+
+enum class ASTType {
+  NONE = 0,
+  BLOCK,
+  IF,
+  WHILE,
+  BREAK,
+  CONTINUE,
+  RETURN, // Controllers
+  CALL,
+  OP1,
+  OP2,
+  INDEX, // Functions
+  LIT_DOUBLE,
+  LIT_INT,
+  LIT_STRING,
+  VAR, // Leaves
+  UNKNOWN
+};
+
+std::string TypeToName(ASTType type) {
+  switch (type) {
+  case ASTType::NONE:
+    return "None";
+  case ASTType::BLOCK:
+    return "BLOCK";
+  case ASTType::IF:
+    return "IF";
+  case ASTType::WHILE:
+    return "WHILE";
+  case ASTType::BREAK:
+    return "BREAK";
+  case ASTType::CONTINUE:
+    return "CONTINUE";
+  case ASTType::RETURN:
+    return "RETURN";
+  case ASTType::CALL:
+    return "CALL";
+  case ASTType::OP1:
+    return "OP1";
+  case ASTType::OP2:
+    return "OP2";
+  case ASTType::INDEX:
+    return "INDEX";
+  case ASTType::LIT_DOUBLE:
+    return "LIT_DOUBLE";
+  case ASTType::LIT_INT:
+    return "LIT_INT";
+  case ASTType::LIT_STRING:
+    return "LIT_STRING";
+  case ASTType::VAR:
+    return "VAR";
+  default:
+    return "UNKNOWN";
+  }
+}
+
 class ASTNode {
 protected:
-  using ptr_t = std::unique_ptr<ASTNode>;
-  std::vector< ptr_t > children{};  // Any sub-trees under this node.
+  ASTType node_type = ASTType::UNKNOWN; // Type of this AST node.
+  Token token;                   // Original token responsible for this node
+  Type out_type = Type::UNKNOWN; // Type does this node resolves to
+  size_t symbol_id =
+      static_cast<size_t>(-1); // ID for relevant symbols in table.
+  std::string
+      extra_info; // Extra information about node for informative debugging.
+  std::vector<ASTNode> children{}; // Any sub-trees under this node.
 
-  template <typename T, typename... Ts>
-  static void AddCode(std::string prefix, T && line, Ts... message) {
-    std::cout << prefix << std::forward<T>(line);
-    (std::cout << ... << std::forward<Ts>(message)) << std::endl;
-  }
 public:
+  ASTNode() {}
+
   // Children can be provided at construction
   template <typename... NODE_Ts>
-  ASTNode(NODE_Ts &&... nodes) { (AddChild(std::move(nodes)), ...); }
+  ASTNode(ASTType node_type, Token token, NODE_Ts &&...nodes)
+      : node_type(node_type), token(token) {
+    (AddChild(std::forward<NODE_Ts>(nodes)), ...);
+  }
 
-  // Virtual destructor to ensure correct version always gets called.
-  virtual ~ASTNode() { } // Children are unique pointers and will delete on their own.
+  ASTType GetNodeType() const { return node_type; };
 
-  virtual std::string GetTypeName() const { return "BASE"; }
-  virtual std::string ExtraInfo() const { return ""; }
+  size_t GetLineID() const { return token.line_id; }
+  std::string GetLexeme() const { return token.lexeme; }
+
+  Type GetType() const { return out_type; }
+  void SetType(Type in) { out_type = in; }
+
+  size_t GetSymbolID() const { return symbol_id; }
+  void SetSymbolID(size_t id) { symbol_id = id; }
+
+  std::string GetExtra() const { return extra_info; }
+  void SetExtra(std::string in) { extra_info = in; }
 
   // Tools to work with child nodes...
   size_t NumChildren() const { return children.size(); }
-  ASTNode & Child(size_t id) { assert(children.size() > id); return *(children[id]); }
-  const ASTNode & Child(size_t id) const { assert(children.size() > id); return *(children[id]); }
+  ASTNode &Child(size_t id) {
+    assert(children.size() > id);
+    return children[id];
+  }
+  const ASTNode &Child(size_t id) const {
+    assert(children.size() > id);
+    return children[id];
+  }
+  void AddChild(ASTNode &&child) { children.push_back(std::move(child)); }
 
-  // Provide an ASTNode type and any constructor arguments to build it in place.
-  template <typename NODE_T, typename... ARG_Ts>
-  void MakeChild(ARG_Ts &&... args) {
-    children.push_back( std::make_unique<NODE_T>(std::forward<ARG_Ts>(args)...) );
+  // === HELPER FUNCTIONS ===
+
+  template <typename... Ts> void Error(Ts &&...message) const {
+    ::Error(token.line_id, std::forward<Ts>(message)...);
   }
 
-  void AddChild(ptr_t && child) {
-    children.push_back(std::move(child));
+  void Print(std::string prefix = "") const {
+    std::cout << prefix << TypeToName(node_type) << ": " << extra_info
+              << std::endl;
+    for (auto &child : children)
+      child.Print(prefix + "  ");
   }
 
-  virtual double Run(SymbolTable & symbols) {
-    for (auto & child : children) child->Run(symbols);
-    return 0.0;
-  }
-
-  // Generate WAT code.  ID how many values were left on the stack.
-  virtual void ToWAT(SymbolTable & symbols, std::string prefix, [[maybe_unused]] bool need_result) {
-    assert(need_result == false);
-    for (auto & child : children) child->ToWAT(symbols, prefix, false);
-  }
-
-  virtual void Print(std::string prefix="") const {
-    std::cout << prefix << GetTypeName() << ": " << ExtraInfo() << std::endl;
-    prefix += "  ";
-    for (auto & child : children) child->Print(prefix);
-  }
-
-  virtual bool CanAssign() const { return false; }
-  virtual double Assign(double value, SymbolTable & /* symbols */) const {
-    assert(false);  // Do not call Assign() on a node that can't run it.
-    return value;
-  }
-  virtual void AssignWAT(SymbolTable & /*symbols*/, std::string /*prefix*/) const {
-    assert(false);  // Do not call AssignWAT() on a node that can't run it.
+  bool CanAssign() const {
+    return node_type == ASTType::VAR || node_type == ASTType::INDEX;
   }
 };
 
-// Some derived version that may be useful...
+ASTNode ASTNode_Block(Token token) { return ASTNode{ASTType::BLOCK, token}; }
+ASTNode ASTNode_If(Token token, ASTNode &&test, ASTNode &&action) {
+  return ASTNode{ASTType::IF, token, std::move(test), std::move(action)};
+}
+ASTNode ASTNode_If(Token token, ASTNode &&test, ASTNode &&action,
+                   ASTNode &&alt_action) {
+  return ASTNode{ASTType::IF, token, std::move(test), std::move(action),
+                 std::move(alt_action)};
+}
+ASTNode ASTNode_While(Token token, ASTNode &&test, ASTNode &&action) {
+  return ASTNode{ASTType::WHILE, token, std::move(test), std::move(action)};
+}
+ASTNode ASTNode_Break(Token token) { return ASTNode{ASTType::BREAK, token}; }
+ASTNode ASTNode_Continue(Token token) {
+  return ASTNode{ASTType::CONTINUE, token};
+}
+ASTNode ASTNode_Return(Token token, ASTNode &&value) {
+  return ASTNode{ASTType::RETURN, token, std::move(value)};
+}
 
-// Child0: Condition
-// Child1: Body
-// Child2: Else
-class ASTNode_If : public ASTNode { };
+ASTNode ASTNode_Call(Token token, size_t fun_id) {
+  ASTNode out{ASTType::CALL, token};
+  out.SetSymbolID(fun_id);
+  out.SetExtra("Function:" + std::to_string(fun_id));
+  return out;
+}
 
-// Child0: Condition
-// Child1: Body
-class ASTNode_While : public ASTNode { };
+ASTNode ASTNode_Operator(Token token, ASTNode child) {
+  ASTNode out{ASTType::OP1, token, std::move(child)};
+  out.SetExtra("Operator:" + token.lexeme);
+  return out;
+}
 
-// Simple leaf to indicate a break command.
-class ASTNode_Break : public ASTNode { };
+ASTNode ASTNode_Operator(Token token, ASTNode child1, ASTNode child2) {
+  ASTNode out{ASTType::OP2, token, std::move(child1), std::move(child2)};
+  out.SetExtra("Operator:" + token.lexeme);
+  return out;
+}
 
-// Simple leaf to indicate a continue command.
-class ASTNode_Continue : public ASTNode { };
+ASTNode ASTNode_Index(Token token, ASTNode child1, ASTNode child2) {
+  return ASTNode{ASTType::INDEX, token, std::move(child1), std::move(child2)};
+}
 
-// Child0: Value to return
-class ASTNode_Return : public ASTNode { };
+ASTNode ASTNode_LitDouble(Token token) {
+  return ASTNode{ASTType::LIT_DOUBLE, token};
+}
+ASTNode ASTNode_LitInt(Token token) { return ASTNode{ASTType::LIT_INT, token}; }
+ASTNode ASTNode_LitString(Token token, std::string value, int mem_pos) {
+  ASTNode out{ASTType::LIT_STRING, token};
+  out.SetExtra(value);
+  out.SetSymbolID(mem_pos);
+  return out;
+}
 
-// Class to handle UNARY operators
-class ASTNode_Operator1 : public ASTNode {
-protected:
-  Token token; // Token to represent this operator (and indicate line number for errors)
-};
-
-// Class to handle BINARY operators
-class ASTNode_Operator2 : public ASTNode {
-protected:
-  Token token; // Token to represent this operator (and indicate line number for errors)
-};
-
-// A literal number (AST leaf)
-class ASTNode_NumLit : public ASTNode {
-protected:
-  double value{};
-};
-
-// A variable (AST leaf)
-class ASTNode_Var : public ASTNode {
-protected:
-  size_t var_id;
-};
+ASTNode ASTNode_Var(Token token, size_t var_id, Type type) {
+  ASTNode out{ASTType::VAR, token};
+  out.SetExtra(token.lexeme);
+  out.SetSymbolID(var_id);
+  out.SetType(type);
+  return out;
+}
