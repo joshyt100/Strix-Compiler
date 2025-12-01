@@ -1,3 +1,2 @@
 # Project5-Template
-
-This repository is a started template for CSE 450, Project 5 in Fall 2025.
+Tests: 00, 01, 03 - 05 (5/14 passed)
