@@ -1,4 +1,3 @@
-
 #pragma once
 
 // Visitor pattern for moving though an AST and ensuring all semantics are
@@ -58,7 +57,10 @@ public:
 
   // Analyze all functions in the symbol table.
   void Analyze() {
-    // Do full semantic analysis on all functions.
+    for (auto &init_node : symbols.GetGlobalInits()) {
+      Analyze(init_node);
+    }
+
     for (fun_id = 0; fun_id < symbols.GetNumFuns(); ++fun_id) {
       Analyze(symbols.GetFunBody(fun_id));
     }

@@ -188,6 +188,9 @@
     (local.get $new_ptr)                 ;; Return the pointer to the new string.
   )
 
+  (func $Init
+  )
+  (start $Init)
   (func $Fun0 (param $var0 i32) (param $var1 i32) (param $var2 i32) (param $var3 i32) (param $var4 i32) (result i32)
     (local.get $var4)  ;; Variable 'color'
     (call $setStrokeColor)  ;; Call function LineColor

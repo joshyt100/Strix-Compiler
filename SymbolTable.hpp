@@ -57,6 +57,8 @@ private:
   size_t parse_fun =
       NO_ID; // Current function being parsed (NO_ID means none parsing)
 
+  std::vector<ASTNode> global_inits;
+
   // Checks to ensure we don't try to use invalid var ids.
   VarInfo &Var(size_t id) {
     assert(id < vars.size());
@@ -121,6 +123,16 @@ public:
             "' (originally defined on line ", vars[symbols[name]].def_line,
             ")");
     }
+
+    if (parse_fun == NO_ID && HasFunSymbol(name)) {
+      size_t fun_id = GetFunID(name);
+      if (fun_id != NO_ID) {
+        Error(id_token.line_id, "Global variable '", name,
+              "' conflicts with function declared on line ",
+              funs[fun_id].def_line, "");
+      }
+    }
+
     size_t var_id = vars.size();
     vars.push_back(VarInfo{name, id_token.line_id, type});
     symbols[name] = var_id;
@@ -198,11 +210,20 @@ public:
 
   size_t AddFunction(Token id_token) {
     const std::string name = id_token.lexeme;
+
     if (HasFunSymbol(name)) {
       Error(id_token.line_id, "Redeclaration of function '", name,
             "' (originally defined on line ", funs[GetFunID(name)].def_line,
             ")");
     }
+
+    size_t var_id = FindVarID(name);
+    if (var_id != NO_ID && Var(var_id).is_global) {
+      Error(id_token.line_id, "Function '", name,
+            "' conflicts with global variable declared on line ",
+            Var(var_id).def_line, "");
+    }
+
     parse_fun = funs.size();
     funs.push_back(FunInfo{name, id_token.line_id, parse_fun});
     fun_map[name] = parse_fun;
@@ -235,6 +256,13 @@ public:
   Type GetReturnType(size_t fun_id) const {
     assert(fun_id < funs.size());
     return funs[fun_id].return_type;
+  }
+
+  std::vector<ASTNode> &GetGlobalInits() { return global_inits; }
+  const std::vector<ASTNode> &GetGlobalInits() const { return global_inits; }
+
+  void AddGlobalInit(ASTNode &&node) {
+    global_inits.push_back(std::move(node));
   }
 
   // === WAT OUTPUT ===

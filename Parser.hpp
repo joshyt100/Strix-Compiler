@@ -121,6 +121,7 @@ private:
 
     return block;
   }
+
   [[nodiscard]] ASTNode Parse_Term() {
     Token token = lexer.Use();
 
@@ -343,46 +344,16 @@ private:
     Token id_token = lexer.Use(Lexer::ID_ID);
     Type type = NameToType(type_token.lexeme);
     size_t var_id = symbols.AddVarSymbol(id_token, type);
+
     if (lexer.Peek() == '=') {
-      lexer.Use('=');
-      Token init_token = lexer.Use();
-      if (type == Type::INT) {
-        if (init_token == Lexer::ID_LIT_INT) {
-          int value = std::stoi(init_token.lexeme);
-          symbols.SetGlobalInitInt(var_id, value);
-        } else if (init_token.lexeme.size() == 3 &&
-                   init_token.lexeme.front() == '\'' &&
-                   init_token.lexeme.back() == '\'') {
-          unsigned char ch = static_cast<unsigned char>(init_token.lexeme[1]);
-          symbols.SetGlobalInitInt(var_id, static_cast<int>(ch));
-        } else {
-          Error(init_token,
-                "Global int variable initializers must be integer literals.");
-        }
-      } else if (type == Type::DOUBLE) {
-        if (init_token == Lexer::ID_LIT_DOUBLE ||
-            init_token == Lexer::ID_LIT_INT) {
-          double value = std::stod(init_token.lexeme);
-          symbols.SetGlobalInitDouble(var_id, value);
-        } else {
-          Error(
-              init_token,
-              "Global double variable initializers must be numeric literals.");
-        }
-      } else if (type == Type::STRING) {
-        if (init_token == Lexer::ID_LIT_STRING) {
-          std::string lit =
-              init_token.lexeme.substr(1, init_token.lexeme.size() - 2);
-          size_t pos_id = symbols.AddLiteral(lit);
-          symbols.SetGlobalInitString(var_id, pos_id);
-        } else {
-          Error(init_token,
-                "Global string variable initializers must be string literals.");
-        }
-      } else {
-        Error(init_token, "Global variable initializers must be literals.");
-      }
+      Token assign_token = lexer.Use('=');
+      ASTNode lhs = ASTNode_Var(id_token, var_id, type);
+      ASTNode rhs = Parse_Expression();
+      ASTNode assign_node =
+          ASTNode_Operator(assign_token, std::move(lhs), std::move(rhs));
+      symbols.AddGlobalInit(std::move(assign_node));
     }
+
     lexer.Use(';');
   }
 

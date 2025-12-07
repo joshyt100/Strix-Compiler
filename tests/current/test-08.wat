@@ -18,9 +18,9 @@
   (data (i32.const 0) "black\00while\00orange\00purple\00yellow\00pink\00brown\00gray\00#000080\00#800000\00#008000\00Test: Buttons to modify the image.\00Bigger!\00IncSize\00Smaller!\00DecSize\00")
   (global $free_mem (mut i32) (i32.const 141))
 
-  (global $var0 (mut i32) (i32.const 10))
-  (global $var1 (mut i32) (i32.const 10))
-  (global $var2 (mut i32) (i32.const 80))
+  (global $var0 (mut i32) (i32.const 0))
+  (global $var1 (mut i32) (i32.const 0))
+  (global $var2 (mut i32) (i32.const 0))
   ;; Function to swap the top two i32s on the stack.
   (func $_swap32 (param $val1 i32) (param $val2 i32) (result i32) (result i32)
     (local.get $val2)
@@ -191,6 +191,18 @@
     (local.get $new_ptr)                 ;; Return the pointer to the new string.
   )
 
+  (func $Init
+    ;; Calculate RHS for assignment.
+    (i32.const 10)  ;; Literal value
+    (global.set $var0)
+    ;; Calculate RHS for assignment.
+    (i32.const 10)  ;; Literal value
+    (global.set $var1)
+    ;; Calculate RHS for assignment.
+    (i32.const 80)  ;; Literal value
+    (global.set $var2)
+  )
+  (start $Init)
   (func $Fun0 (param $var3 i32) (result i32)
     (local.get $var3)  ;; Variable 'color'
     (call $setStrokeColor)  ;; Call function LineColor

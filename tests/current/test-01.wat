@@ -188,6 +188,9 @@
     (local.get $new_ptr)                 ;; Return the pointer to the new string.
   )
 
+  (func $Init
+  )
+  (start $Init)
   (func $Fun0 (result i32)
     (i32.const 0)  ;; Literal string "Test: Text on canvas."
     (call $setTitle)  ;; Call function SetTitle

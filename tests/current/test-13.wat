@@ -20,24 +20,24 @@
 
   (global $var0 (mut i32) (i32.const 0))
   (global $var1 (mut i32) (i32.const 0))
-  (global $var2 (mut i32) (i32.const 100))
-  (global $var3 (mut i32) (i32.const 10))
+  (global $var2 (mut i32) (i32.const 0))
+  (global $var3 (mut i32) (i32.const 0))
   (global $var4 (mut i32) (i32.const 0))
   (global $var5 (mut i32) (i32.const 0))
-  (global $var6 (mut i32) (i32.const 80))
-  (global $var7 (mut i32) (i32.const 2))
+  (global $var6 (mut i32) (i32.const 0))
+  (global $var7 (mut i32) (i32.const 0))
   (global $var8 (mut i32) (i32.const 0))
   (global $var9 (mut i32) (i32.const 0))
-  (global $var10 (mut i32) (i32.const 70))
-  (global $var11 (mut i32) (i32.const 3))
+  (global $var10 (mut i32) (i32.const 0))
+  (global $var11 (mut i32) (i32.const 0))
   (global $var12 (mut i32) (i32.const 0))
   (global $var13 (mut i32) (i32.const 0))
-  (global $var14 (mut i32) (i32.const 60))
-  (global $var15 (mut i32) (i32.const 4))
+  (global $var14 (mut i32) (i32.const 0))
+  (global $var15 (mut i32) (i32.const 0))
   (global $var16 (mut i32) (i32.const 0))
   (global $var17 (mut i32) (i32.const 0))
-  (global $var18 (mut i32) (i32.const 50))
-  (global $var19 (mut i32) (i32.const 5))
+  (global $var18 (mut i32) (i32.const 0))
+  (global $var19 (mut i32) (i32.const 0))
   (global $var20 (mut i32) (i32.const 0))
   (global $var21 (mut i32) (i32.const 0))
   (global $var22 (mut i32) (i32.const 0))
@@ -59,39 +59,39 @@
   (global $var38 (mut i32) (i32.const 0))
   (global $var39 (mut i32) (i32.const 0))
   (global $var40 (mut i32) (i32.const 0))
-  (global $var41 (mut i32) (i32.const 500))
-  (global $var42 (mut i32) (i32.const 500))
-  (global $var43 (mut i32) (i32.const 5500))
-  (global $var44 (mut i32) (i32.const 5500))
-  (global $var45 (mut i32) (i32.const 1750))
-  (global $var46 (mut i32) (i32.const 500))
-  (global $var47 (mut i32) (i32.const 4250))
-  (global $var48 (mut i32) (i32.const 5500))
-  (global $var49 (mut i32) (i32.const 3000))
-  (global $var50 (mut i32) (i32.const 500))
-  (global $var51 (mut i32) (i32.const 3000))
-  (global $var52 (mut i32) (i32.const 5500))
-  (global $var53 (mut i32) (i32.const 4250))
-  (global $var54 (mut i32) (i32.const 500))
-  (global $var55 (mut i32) (i32.const 1750))
-  (global $var56 (mut i32) (i32.const 5500))
-  (global $var57 (mut i32) (i32.const 5500))
-  (global $var58 (mut i32) (i32.const 500))
-  (global $var59 (mut i32) (i32.const 500))
-  (global $var60 (mut i32) (i32.const 5500))
-  (global $var61 (mut i32) (i32.const 5500))
-  (global $var62 (mut i32) (i32.const 1750))
-  (global $var63 (mut i32) (i32.const 500))
-  (global $var64 (mut i32) (i32.const 4250))
-  (global $var65 (mut i32) (i32.const 5500))
-  (global $var66 (mut i32) (i32.const 3000))
-  (global $var67 (mut i32) (i32.const 500))
-  (global $var68 (mut i32) (i32.const 3000))
-  (global $var69 (mut i32) (i32.const 5500))
-  (global $var70 (mut i32) (i32.const 4250))
-  (global $var71 (mut i32) (i32.const 500))
-  (global $var72 (mut i32) (i32.const 1750))
-  (global $var73 (mut i32) (i32.const 10))
+  (global $var41 (mut i32) (i32.const 0))
+  (global $var42 (mut i32) (i32.const 0))
+  (global $var43 (mut i32) (i32.const 0))
+  (global $var44 (mut i32) (i32.const 0))
+  (global $var45 (mut i32) (i32.const 0))
+  (global $var46 (mut i32) (i32.const 0))
+  (global $var47 (mut i32) (i32.const 0))
+  (global $var48 (mut i32) (i32.const 0))
+  (global $var49 (mut i32) (i32.const 0))
+  (global $var50 (mut i32) (i32.const 0))
+  (global $var51 (mut i32) (i32.const 0))
+  (global $var52 (mut i32) (i32.const 0))
+  (global $var53 (mut i32) (i32.const 0))
+  (global $var54 (mut i32) (i32.const 0))
+  (global $var55 (mut i32) (i32.const 0))
+  (global $var56 (mut i32) (i32.const 0))
+  (global $var57 (mut i32) (i32.const 0))
+  (global $var58 (mut i32) (i32.const 0))
+  (global $var59 (mut i32) (i32.const 0))
+  (global $var60 (mut i32) (i32.const 0))
+  (global $var61 (mut i32) (i32.const 0))
+  (global $var62 (mut i32) (i32.const 0))
+  (global $var63 (mut i32) (i32.const 0))
+  (global $var64 (mut i32) (i32.const 0))
+  (global $var65 (mut i32) (i32.const 0))
+  (global $var66 (mut i32) (i32.const 0))
+  (global $var67 (mut i32) (i32.const 0))
+  (global $var68 (mut i32) (i32.const 0))
+  (global $var69 (mut i32) (i32.const 0))
+  (global $var70 (mut i32) (i32.const 0))
+  (global $var71 (mut i32) (i32.const 0))
+  (global $var72 (mut i32) (i32.const 0))
+  (global $var73 (mut i32) (i32.const 0))
   (global $var74 (mut i32) (i32.const 0))
   ;; Function to swap the top two i32s on the stack.
   (func $_swap32 (param $val1 i32) (param $val2 i32) (result i32) (result i32)
@@ -263,6 +263,234 @@
     (local.get $new_ptr)                 ;; Return the pointer to the new string.
   )
 
+  (func $Init
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var0)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var1)
+    ;; Calculate RHS for assignment.
+    (i32.const 100)  ;; Literal value
+    (global.set $var2)
+    ;; Calculate RHS for assignment.
+    (i32.const 10)  ;; Literal value
+    (global.set $var3)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var4)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var5)
+    ;; Calculate RHS for assignment.
+    (i32.const 80)  ;; Literal value
+    (global.set $var6)
+    ;; Calculate RHS for assignment.
+    (i32.const 2)  ;; Literal value
+    (global.set $var7)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var8)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var9)
+    ;; Calculate RHS for assignment.
+    (i32.const 70)  ;; Literal value
+    (global.set $var10)
+    ;; Calculate RHS for assignment.
+    (i32.const 3)  ;; Literal value
+    (global.set $var11)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var12)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var13)
+    ;; Calculate RHS for assignment.
+    (i32.const 60)  ;; Literal value
+    (global.set $var14)
+    ;; Calculate RHS for assignment.
+    (i32.const 4)  ;; Literal value
+    (global.set $var15)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var16)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var17)
+    ;; Calculate RHS for assignment.
+    (i32.const 50)  ;; Literal value
+    (global.set $var18)
+    ;; Calculate RHS for assignment.
+    (i32.const 5)  ;; Literal value
+    (global.set $var19)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var20)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var21)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var22)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var23)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var24)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var25)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var26)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var27)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var28)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var29)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var30)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var31)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var32)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var33)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var34)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var35)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var36)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var37)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var38)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var39)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var40)
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var41)
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var42)
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var43)
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var44)
+    ;; Calculate RHS for assignment.
+    (i32.const 1750)  ;; Literal value
+    (global.set $var45)
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var46)
+    ;; Calculate RHS for assignment.
+    (i32.const 4250)  ;; Literal value
+    (global.set $var47)
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var48)
+    ;; Calculate RHS for assignment.
+    (i32.const 3000)  ;; Literal value
+    (global.set $var49)
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var50)
+    ;; Calculate RHS for assignment.
+    (i32.const 3000)  ;; Literal value
+    (global.set $var51)
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var52)
+    ;; Calculate RHS for assignment.
+    (i32.const 4250)  ;; Literal value
+    (global.set $var53)
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var54)
+    ;; Calculate RHS for assignment.
+    (i32.const 1750)  ;; Literal value
+    (global.set $var55)
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var56)
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var57)
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var58)
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var59)
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var60)
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var61)
+    ;; Calculate RHS for assignment.
+    (i32.const 1750)  ;; Literal value
+    (global.set $var62)
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var63)
+    ;; Calculate RHS for assignment.
+    (i32.const 4250)  ;; Literal value
+    (global.set $var64)
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var65)
+    ;; Calculate RHS for assignment.
+    (i32.const 3000)  ;; Literal value
+    (global.set $var66)
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var67)
+    ;; Calculate RHS for assignment.
+    (i32.const 3000)  ;; Literal value
+    (global.set $var68)
+    ;; Calculate RHS for assignment.
+    (i32.const 5500)  ;; Literal value
+    (global.set $var69)
+    ;; Calculate RHS for assignment.
+    (i32.const 4250)  ;; Literal value
+    (global.set $var70)
+    ;; Calculate RHS for assignment.
+    (i32.const 500)  ;; Literal value
+    (global.set $var71)
+    ;; Calculate RHS for assignment.
+    (i32.const 1750)  ;; Literal value
+    (global.set $var72)
+    ;; Calculate RHS for assignment.
+    (i32.const 10)  ;; Literal value
+    (global.set $var73)
+    ;; Calculate RHS for assignment.
+    (i32.const 0)  ;; Literal value
+    (global.set $var74)
+  )
+  (start $Init)
   (func $Fun0 (result i32)
     ;; == If Condition ==
     (global.get $var22)

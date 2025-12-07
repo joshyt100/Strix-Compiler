@@ -367,6 +367,15 @@ public:
     PrintWATHelpers(); // Print all of the helper functions for dealing with
                        // strings.
 
+    std::cout << "  (func $Init\n";
+    indent = 4;
+    for (auto &init_node : symbols.GetGlobalInits()) {
+      ToWAT(init_node, false);
+    }
+    indent = 0;
+    std::cout << "  )\n";
+    std::cout << "  (start $Init)\n";
+
     for (fun_id = 0; fun_id < symbols.GetNumFuns(); ++fun_id) {
       std::cout << "  (func $Fun" << fun_id;
 
@@ -808,3 +817,4 @@ public:
     }
   }
 };
+
