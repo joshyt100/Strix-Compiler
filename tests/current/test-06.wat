@@ -191,10 +191,8 @@
   (func $Fun0 (param $var0 i32) (param $var1 i32) (param $var2 i32) (param $var3 i32) (param $var4 i32) (result i32)
     (local.get $var4)  ;; Variable 'color'
     (call $setStrokeColor)  ;; Call function LineColor
-    (drop) ;; Result not used.
     (local.get $var3)  ;; Variable 'line_width'
     (call $setLineWidth)  ;; Call function LineWidth
-    (drop) ;; Result not used.
     (local.get $var0)  ;; Variable 'x'
     (local.get $var1)  ;; Variable 'y'
     (local.get $var0)  ;; Variable 'x'
@@ -204,7 +202,6 @@
     (local.get $var2)  ;; Variable 'size'
     (i32.add)
     (call $drawLine)  ;; Call function Line
-    (drop) ;; Result not used.
     (local.get $var0)  ;; Variable 'x'
     (local.get $var2)  ;; Variable 'size'
     (i32.add)
@@ -214,7 +211,6 @@
     (local.get $var2)  ;; Variable 'size'
     (i32.add)
     (call $drawLine)  ;; Call function Line
-    (drop) ;; Result not used.
     ;; == Generate return code ==
     (i32.const 0)  ;; Literal value
     (return)
@@ -285,7 +281,6 @@
     (drop) ;; Result not used.
     (i32.const 61)  ;; Literal string "Test: Call function to make lots of X's in different sizes, colors and thicknesses"
     (call $setTitle)  ;; Call function SetTitle
-    (drop) ;; Result not used.
     ;; == Generate return code ==
     (i32.const 0)  ;; Literal value
     (return)

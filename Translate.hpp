@@ -469,48 +469,63 @@ public:
   void ToWAT_Call(ASTNode &node, bool need_result) {
     ChildrenToWAT(node, true);
 
-    const FunInfo &fun_info = symbols.GetFunInfo(node.GetSymbolID());
     std::string fun_name = node.GetLexeme();
 
     std::string wat_label;
-    if (fun_name == "AddButton")
+    bool is_builtin = false;
+
+    if (fun_name == "AddButton") {
       wat_label = "$addButton";
-    else if (fun_name == "AddKeypress")
+      is_builtin = true;
+    } else if (fun_name == "AddKeypress") {
       wat_label = "$addKeyTrigger";
-    else if (fun_name == "AddClickFun")
+      is_builtin = true;
+    } else if (fun_name == "AddClickFun") {
       wat_label = "$addClickFun";
-    else if (fun_name == "AddMoveFun")
+      is_builtin = true;
+    } else if (fun_name == "AddMoveFun") {
       wat_label = "$addMoveFun";
-    else if (fun_name == "AddAnimFun")
+      is_builtin = true;
+    } else if (fun_name == "AddAnimFun") {
       wat_label = "$addAnimFun";
-
-    else if (fun_name == "SetTitle")
+      is_builtin = true;
+    } else if (fun_name == "SetTitle") {
       wat_label = "$setTitle";
-    else if (fun_name == "LineColor")
+      is_builtin = true;
+    } else if (fun_name == "LineColor") {
       wat_label = "$setStrokeColor";
-    else if (fun_name == "FillColor")
+      is_builtin = true;
+    } else if (fun_name == "FillColor") {
       wat_label = "$setFillColor";
-    else if (fun_name == "LineWidth")
+      is_builtin = true;
+    } else if (fun_name == "LineWidth") {
       wat_label = "$setLineWidth";
-
-    else if (fun_name == "Line")
+      is_builtin = true;
+    } else if (fun_name == "Line") {
       wat_label = "$drawLine";
-    else if (fun_name == "Rect")
+      is_builtin = true;
+    } else if (fun_name == "Rect") {
       wat_label = "$drawRect";
-    else if (fun_name == "Circle")
+      is_builtin = true;
+    } else if (fun_name == "Circle") {
       wat_label = "$drawCircle";
-    else if (fun_name == "Text")
+      is_builtin = true;
+    } else if (fun_name == "Text") {
       wat_label = "$drawText";
-
-    else {
-      wat_label = "$Fun" + std::to_string(fun_info.fun_id);
+      is_builtin = true;
     }
 
-    AddCode("(call ", wat_label, ")  ;; Call function ", fun_name);
-
-    if (!need_result && fun_info.return_type != Type::NONE)
-      AddCode("(drop) ;; Result not used.");
+    if (!is_builtin) {
+      const FunInfo &fun_info = symbols.GetFunInfo(node.GetSymbolID());
+      wat_label = "$Fun" + std::to_string(fun_info.fun_id);
+      AddCode("(call ", wat_label, ")  ;; Call function ", fun_name);
+      if (!need_result && fun_info.return_type != Type::NONE)
+        AddCode("(drop) ;; Result not used.");
+    } else {
+      AddCode("(call ", wat_label, ")  ;; Call function ", fun_name);
+    }
   }
+
   void ToWAT_Continue([[maybe_unused]] ASTNode &node,
                       [[maybe_unused]] bool need_result) {
     assert(need_result == false);
