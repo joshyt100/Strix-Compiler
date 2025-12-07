@@ -784,4 +784,5 @@
   (export "KeyRight" (func $Fun9))
   (export "ToggleLights" (func $Fun10))
   (export "Main" (func $Fun11))
+  (export "free_mem" (global $free_mem))
 ) ;; End module

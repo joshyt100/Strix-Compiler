@@ -379,4 +379,5 @@
   (export "IncSize" (func $Fun2))
   (export "DecSize" (func $Fun3))
   (export "Main" (func $Fun4))
+  (export "free_mem" (global $free_mem))
 ) ;; End module

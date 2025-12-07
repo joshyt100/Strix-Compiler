@@ -2241,4 +2241,5 @@
   (export "KeyLeft" (func $Fun8))
   (export "KeyRight" (func $Fun9))
   (export "Main" (func $Fun10))
+  (export "free_mem" (global $free_mem))
 ) ;; End module

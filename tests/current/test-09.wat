@@ -379,4 +379,5 @@
 
   (export "DrawCell" (func $Fun0))
   (export "Main" (func $Fun1))
+  (export "free_mem" (global $free_mem))
 ) ;; End module

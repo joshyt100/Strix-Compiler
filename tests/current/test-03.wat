@@ -204,4 +204,5 @@
   )
 
   (export "Main" (func $Fun0))
+  (export "free_mem" (global $free_mem))
 ) ;; End module

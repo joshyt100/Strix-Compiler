@@ -409,10 +409,10 @@ public:
     // EXPORT Functions
     std::cout << "\n";
     for (size_t fun_id = 0; fun_id < symbols.GetNumFuns(); ++fun_id) {
-      //  (export ”ExternalFunctionName" (func $UniqueFunctioinName))
       std::cout << "  (export \"" << symbols.GetFunName(fun_id)
                 << "\" (func $Fun" << fun_id << "))\n";
     }
+    std::cout << "  (export \"free_mem\" (global $free_mem))\n";
 
     std::cout << ") ;; End module\n";
   }
@@ -817,4 +817,3 @@ public:
     }
   }
 };
-
