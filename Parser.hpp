@@ -121,16 +121,38 @@ private:
 
     return block;
   }
-
   [[nodiscard]] ASTNode Parse_Term() {
     Token token = lexer.Use();
 
-    // Check for unary operators
     if (token == '!' || token == '-' || token == '#') {
       return ASTNode_Operator(token, Parse_Term());
     }
 
+    if (token.lexeme.size() == 3 && token.lexeme.front() == '\'' &&
+        token.lexeme.back() == '\'') {
+      return ASTNode_LitInt(token);
+    }
+
+    if (token.lexeme == "'") {
+      Token mid = lexer.Use();
+      Token close = lexer.Use();
+
+      if (close.lexeme != "'") {
+        Error(close, "Unterminated character literal.");
+      }
+      if (mid.lexeme.size() != 1) {
+        Error(mid, "Character literal must be a single character.");
+      }
+
+      Token combined = token;
+      combined.lexeme = "'" + mid.lexeme + "'";
+
+      return ASTNode_LitInt(combined);
+    }
+
     ASTNode out_node;
+
+    // === Existing code from here down remains the same ===
 
     // Check for parentheses
     if (token == '(') {
@@ -178,8 +200,6 @@ private:
       }
     }
 
-    // == Check if this is a literal ==
-
     else if (token == Lexer::ID_LIT_DOUBLE) {
       out_node = ASTNode_LitDouble(token);
     } else if (token == Lexer::ID_LIT_INT) {
@@ -188,11 +208,10 @@ private:
       std::string lit = token.lexeme.substr(1, token.lexeme.size() - 2);
       size_t pos_id = symbols.AddLiteral(lit);
       out_node = ASTNode_LitString(token, lit, pos_id);
-    } else
+    } else {
       Error(token, "Unexpected token '", token.lexeme, "'");
-    ;
+    }
 
-    // See if we are indexing into this term.
     if (lexer.Peek() == '[') {
       Token index_token = lexer.Use('[');
       ASTNode index_expr = Parse_Expression();

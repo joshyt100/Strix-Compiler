@@ -562,8 +562,18 @@ public:
   }
 
   void ToWAT_LitInt(ASTNode &node, bool need_result) {
-    if (need_result)
-      AddCode("(i32.const ", node.GetLexeme(), ")  ;; Literal value");
+    if (!need_result)
+      return;
+
+    std::string lex = node.GetLexeme();
+
+    if (lex.size() == 3 && lex.front() == '\'' && lex.back() == '\'') {
+      unsigned char ch = static_cast<unsigned char>(lex[1]);
+      AddCode("(i32.const ", static_cast<int>(ch), ")  ;; Char literal ", lex,
+              " → ASCII ", static_cast<int>(ch));
+    } else {
+      AddCode("(i32.const ", lex, ")  ;; Literal value");
+    }
   }
 
   void ToWAT_LitString(ASTNode &node, bool need_result) {
