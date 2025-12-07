@@ -338,6 +338,54 @@ private:
     symbols.EndFunction(fun_id);
   }
 
+  void Parse_GlobalVar() {
+    Token type_token = lexer.Use(Lexer::ID_TYPE);
+    Token id_token = lexer.Use(Lexer::ID_ID);
+    Type type = NameToType(type_token.lexeme);
+    size_t var_id = symbols.AddVarSymbol(id_token, type);
+    if (lexer.Peek() == '=') {
+      lexer.Use('=');
+      Token init_token = lexer.Use();
+      if (type == Type::INT) {
+        if (init_token == Lexer::ID_LIT_INT) {
+          int value = std::stoi(init_token.lexeme);
+          symbols.SetGlobalInitInt(var_id, value);
+        } else if (init_token.lexeme.size() == 3 &&
+                   init_token.lexeme.front() == '\'' &&
+                   init_token.lexeme.back() == '\'') {
+          unsigned char ch = static_cast<unsigned char>(init_token.lexeme[1]);
+          symbols.SetGlobalInitInt(var_id, static_cast<int>(ch));
+        } else {
+          Error(init_token,
+                "Global int variable initializers must be integer literals.");
+        }
+      } else if (type == Type::DOUBLE) {
+        if (init_token == Lexer::ID_LIT_DOUBLE ||
+            init_token == Lexer::ID_LIT_INT) {
+          double value = std::stod(init_token.lexeme);
+          symbols.SetGlobalInitDouble(var_id, value);
+        } else {
+          Error(
+              init_token,
+              "Global double variable initializers must be numeric literals.");
+        }
+      } else if (type == Type::STRING) {
+        if (init_token == Lexer::ID_LIT_STRING) {
+          std::string lit =
+              init_token.lexeme.substr(1, init_token.lexeme.size() - 2);
+          size_t pos_id = symbols.AddLiteral(lit);
+          symbols.SetGlobalInitString(var_id, pos_id);
+        } else {
+          Error(init_token,
+                "Global string variable initializers must be string literals.");
+        }
+      } else {
+        Error(init_token, "Global variable initializers must be literals.");
+      }
+    }
+    lexer.Use(';');
+  }
+
 public:
   Parser(Lexer &lexer, SymbolTable &symbols) : lexer(lexer), symbols(symbols) {
     // Set up all information about operators...
@@ -358,7 +406,16 @@ public:
 
   void Parse() {
     // Parsing the token stream, one function at a time.
-    while (lexer.Any())
-      Parse_Function();
+    while (lexer.Any()) {
+      int token_id = lexer.Peek();
+      if (token_id == Lexer::ID_FUNCTION) {
+        Parse_Function();
+      } else if (token_id == Lexer::ID_TYPE) {
+        Parse_GlobalVar();
+      } else {
+        Error(lexer.Peek(), "Unexpected token '", lexer.Peek().lexeme,
+              "' at global scope.");
+      }
+    }
   }
 };

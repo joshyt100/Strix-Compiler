@@ -1,1 +1,1 @@
-ERROR (line 1): Expected token of type FUNCTION, but found type TYPE
+ERROR (line 2): Expected token of type ';', but found type '+'

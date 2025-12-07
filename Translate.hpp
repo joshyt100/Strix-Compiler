@@ -346,6 +346,24 @@ public:
                  "(param i32 i32 i32 i32)))\n";
 
     symbols.PrintWATMemory();
+
+    const auto &globals = symbols.GetGlobalVars();
+    for (auto var_id : globals) {
+      Type type = symbols.GetVarType(var_id);
+      std::string wat_type = symbols.GetWATType(var_id);
+      std::cout << "  (global $var" << var_id << " (mut " << wat_type << ") ";
+      if (type == Type::DOUBLE) {
+        double value =
+            symbols.HasInit(var_id) ? symbols.GetGlobalInitDouble(var_id) : 0.0;
+        std::cout << "(f64.const " << value << ")";
+      } else {
+        int value =
+            symbols.HasInit(var_id) ? symbols.GetGlobalInitInt(var_id) : 0;
+        std::cout << "(i32.const " << value << ")";
+      }
+      std::cout << ")\n";
+    }
+
     PrintWATHelpers(); // Print all of the helper functions for dealing with
                        // strings.
 
@@ -366,9 +384,9 @@ public:
       // Declare LOCAL variables
       auto locals = symbols.GetFunLocals(fun_id);
       for (auto var_id : locals) {
-        std::string wat_type = symbols.GetWATType(var_id);
-        AddCode("(local $var", var_id, " ", wat_type, ") ;; Declare var '",
-                symbols.GetVarName(var_id), "'");
+        std::string wat_type_local = symbols.GetWATType(var_id);
+        AddCode("(local $var", var_id, " ", wat_type_local,
+                ") ;; Declare var '", symbols.GetVarName(var_id), "'");
       }
 
       // Generate BODY
@@ -711,8 +729,12 @@ public:
   void ToWAT_Var(ASTNode &node, bool need_result) {
     if (need_result) {
       size_t var_id = node.GetSymbolID();
-      AddCode("(local.get $var", var_id, ")  ;; Variable '",
-              symbols.GetVarName(var_id), "'");
+      if (symbols.IsGlobal(var_id)) {
+        AddCode("(global.get $var", var_id, ")");
+      } else {
+        AddCode("(local.get $var", var_id, ")  ;; Variable '",
+                symbols.GetVarName(var_id), "'");
+      }
     }
   }
 
@@ -778,7 +800,11 @@ public:
         Type::STRING) { // If we have a string, duplicate it before setting.
       AddCode("(call $_str_copy)");
     }
-    AddCode("(local.set $var", var_id, ")  ;; Set variable '",
-            symbols.GetVarName(var_id), "'");
+    if (symbols.IsGlobal(var_id)) {
+      AddCode("(global.set $var", var_id, ")");
+    } else {
+      AddCode("(local.set $var", var_id, ")  ;; Set variable '",
+              symbols.GetVarName(var_id), "'");
+    }
   }
 };

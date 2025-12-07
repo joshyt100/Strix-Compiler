@@ -18,6 +18,10 @@ struct VarInfo {
   std::string name;
   size_t def_line;
   Type type;
+  bool is_global = false;
+  bool has_init = false;
+  int init_int = 0;
+  double init_double = 0.0;
 };
 
 // Information about each function declared in the source file.
@@ -40,6 +44,7 @@ public:
 private:
   std::vector<VarInfo> vars; // Set of ALL variables organized by ID.
   std::vector<FunInfo> funs; // Set of all functions, organized by ID.
+  std::vector<size_t> global_ids;
 
   std::string start_memory; // Starting values stored in memory.
   std::map<std::string, size_t> lit_strings; // Position of literal strings.
@@ -120,14 +125,39 @@ public:
     vars.push_back(VarInfo{name, id_token.line_id, type});
     symbols[name] = var_id;
 
-    // List this variable as part of the function it is in.
-    assert(funs.size() > 0);
-    if (is_param)
-      funs.back().param_ids.push_back(var_id);
-    else
-      funs.back().local_ids.push_back(var_id);
+    if (parse_fun == NO_ID) {
+      Var(var_id).is_global = true;
+      global_ids.push_back(var_id);
+    } else {
+      assert(parse_fun < funs.size());
+      if (is_param)
+        funs[parse_fun].param_ids.push_back(var_id);
+      else
+        funs[parse_fun].local_ids.push_back(var_id);
+    }
 
     return var_id;
+  }
+
+  bool IsGlobal(size_t id) const { return Var(id).is_global; }
+  bool HasInit(size_t id) const { return Var(id).has_init; }
+  int GetGlobalInitInt(size_t id) const { return Var(id).init_int; }
+  double GetGlobalInitDouble(size_t id) const { return Var(id).init_double; }
+  const std::vector<size_t> &GetGlobalVars() const { return global_ids; }
+
+  void SetGlobalInitInt(size_t id, int value) {
+    Var(id).has_init = true;
+    Var(id).init_int = value;
+  }
+
+  void SetGlobalInitDouble(size_t id, double value) {
+    Var(id).has_init = true;
+    Var(id).init_double = value;
+  }
+
+  void SetGlobalInitString(size_t id, size_t pos) {
+    Var(id).has_init = true;
+    Var(id).init_int = static_cast<int>(pos);
   }
 
   // Get the ID of a symbol that is expected to be in the symbol table; throw
