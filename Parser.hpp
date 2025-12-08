@@ -371,6 +371,10 @@ public:
     cur_info = {++max_prec_level, false, false}; // NON associative
     op_map["<"] = op_map[">"] = op_map["<="] = op_map[">="] = op_map["=="] =
         op_map["!="] = cur_info;
+    cur_info = {++max_prec_level, true, false};
+    op_map["&&"] = cur_info;
+    cur_info = {++max_prec_level, true, false};
+    op_map["||"] = cur_info;
     cur_info = {++max_prec_level, false, true}; // RIGHT associative
     op_map["="] = cur_info;
   }

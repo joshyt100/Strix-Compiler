@@ -647,10 +647,12 @@ public:
     if (!need_result)
       AddCode("(drop) ;; Result not used.");
   }
-
   void ToWAT_Operator2(ASTNode &node, bool need_result) {
 
     std::string op = node.GetLexeme();
+
+    Type type0 = node.Child(0).GetType();
+    Type type1 = node.Child(1).GetType();
 
     // If we are doing an assignment, we need to handle it specially.
     if (op == "=") {
@@ -662,8 +664,49 @@ public:
       return;
     }
 
-    Type type0 = node.Child(0).GetType();
-    Type type1 = node.Child(1).GetType();
+    // Short-circuiting logical AND
+    if (op == "&&") {
+      ToWAT(node.Child(0), true);
+      AddConvert(type0, Type::INT);
+
+      AddCode("(if (result i32)");
+      AddCode("  (then");
+      ToWAT(node.Child(1), true);
+      AddConvert(type1, Type::INT);
+      AddCode("    (i32.eqz)");
+      AddCode("    (i32.eqz)");
+      AddCode("  )");
+      AddCode("  (else");
+      AddCode("    (i32.const 0)");
+      AddCode("  )");
+      AddCode(")");
+
+      if (!need_result)
+        AddCode("(drop) ;; Result not used.");
+      return;
+    }
+
+    // Short-circuiting logical OR
+    if (op == "||") {
+      ToWAT(node.Child(0), true);
+      AddConvert(type0, Type::INT);
+
+      AddCode("(if (result i32)");
+      AddCode("  (then");
+      AddCode("    (i32.const 1)");
+      AddCode("  )");
+      AddCode("  (else");
+      ToWAT(node.Child(1), true);
+      AddConvert(type1, Type::INT);
+      AddCode("    (i32.eqz)");
+      AddCode("    (i32.eqz)");
+      AddCode("  )");
+      AddCode(")");
+
+      if (!need_result)
+        AddCode("(drop) ;; Result not used.");
+      return;
+    }
 
     // We are working with an operator that needs two arguments; generate both.
     ToWAT(node.Child(0), true);

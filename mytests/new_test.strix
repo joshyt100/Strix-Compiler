@@ -1,0 +1,24 @@
+// Test logical && and || with simple drawing.
+function Main() : int {
+  int x = 1;
+  int y = 0;
+
+  // x && y is 0, so this branch should use blue fill.
+  if (x && y) {
+    FillColor("red");
+  } else {
+    FillColor("blue");
+  }
+
+  // x || y is 1, so this branch should use the dark red outline.
+  if (x || y) {
+    LineColor("#800000");
+  } else {
+    LineColor("#000080");
+  }
+
+  SetTitle("Test: logical && and ||");
+  Circle(300, 300, 200);
+
+  return 0;
+}

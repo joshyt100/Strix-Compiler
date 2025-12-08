@@ -437,10 +437,26 @@ public:
             "Cannot use plus operator ('+') to add a double onto a string.");
       }
       return Type::STRING;
-    } else if (op == "==" || op == "!=" || op == "<" || op == "<=" ||
-               op == ">" || op == ">=") {
+    }
+
+    else if (op == "&&" || op == "||") {
+      RequireNumeric(node, type0,
+                     "Operator '" + op + "' must have numeric args");
+      RequireNumeric(node, type1,
+                     "Operator '" + op + "' must have numeric args");
+      return Type::INT;
+    }
+
+    else if (op == "==" || op == "!=" || op == "<" || op == "<=" || op == ">" ||
+             op == ">=") {
       RequireNumeric(node, type0, "Comparisons must have numeric args");
       RequireNumeric(node, type1, "Comparisons must have numeric args");
+      return Type::INT;
+    } else if (op == "&&" || op == "||") {
+      RequireNumeric(node, type0,
+                     "Operator '" + op + "' must have numeric args");
+      RequireNumeric(node, type1,
+                     "Operator '" + op + "' must have numeric args");
       return Type::INT;
     }
 
