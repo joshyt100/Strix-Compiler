@@ -153,8 +153,6 @@ private:
 
     ASTNode out_node;
 
-    // === Existing code from here down remains the same ===
-
     // Check for parentheses
     if (token == '(') {
       out_node = Parse_Expression();
@@ -247,7 +245,6 @@ private:
           it->second.recurse_right ? prec_level : prec_level - 1;
       ASTNode rhs = Parse_Expression(right_prec);
 
-      // Build the node
       lhs = ASTNode_Operator(op_token, std::move(lhs), std::move(rhs));
 
       // If left associative, look for additional ops to put higher in the tree.
@@ -380,7 +377,6 @@ public:
   }
 
   void Parse() {
-    // Parsing the token stream, one function at a time.
     while (lexer.Any()) {
       int token_id = lexer.Peek();
       if (token_id == Lexer::ID_FUNCTION) {
