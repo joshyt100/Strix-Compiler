@@ -31,6 +31,17 @@ Strix is a C++ compiler for a custom language that translates source code into *
    - Calls to host-provided functions (graphics/events)
 
 ## Build & Run
+
+Create a `.strix` file (e.g., `example.strix`):
+
+```c
+function Main() : int {
+  SetTitle("Hello Strix");
+  Circle(300, 300, 100);
+  return 0;
+}
+```
+Then compile and run:
 ```bash
 make
-./strix input.txt
+./strix example.strix
