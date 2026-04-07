@@ -45,3 +45,7 @@ Then compile and run:
 ```bash
 make
 ./strix example.strix
+```
+## License
+
+This project is licensed under the MIT License.
