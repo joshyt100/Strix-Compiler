@@ -1,0 +1,5 @@
+function Main() : int {
+  SetTitle("Hello Strix");
+  Circle(300, 300, 100);
+  return 0;
+}

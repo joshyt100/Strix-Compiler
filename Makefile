@@ -8,12 +8,12 @@
 #  clean - Remove excess files
 
 # Project-specific settings
-TARGET := Project5
+TARGET := strix
 
 # Identify compiler to use
 CXX := c++
 
-# Flags to ALWAYs use
+# Flags to ALWAYS use
 CFLAGS_all := -Wall -Wextra -std=c++20
 
 # Test file (wildcard to be found when used.)
@@ -32,11 +32,11 @@ CFLAGS_grumpy := -pedantic -Wconversion -Weffc++ $(CFLAGS_all)
 default: $(TARGET)
 all: $(TARGET)
 
-debug:	CFLAGS := $(CFLAGS_debug)
-debug:	$(TARGET)
+debug: CFLAGS := $(CFLAGS_debug)
+debug: $(TARGET)
 
-grumpy:	CFLAGS := $(CFLAGS_grumpy)
-grumpy:	$(TARGET)
+grumpy: CFLAGS := $(CFLAGS_grumpy)
+grumpy: $(TARGET)
 
 tests: $(TARGET)
 	@echo "Running tests..."
@@ -47,10 +47,10 @@ tests: $(TARGET)
 .PHONY: clean debug grumpy tests
 
 # List any files here that should trigger full recompilation when they change.
-KEY_FILES := 
+KEY_FILES :=
 
-$(TARGET):	$(TARGET).cpp $(KEY_FILES)
-	$(CXX) $(CFLAGS) $(TARGET).cpp -o $(TARGET)
+$(TARGET): Project5.cpp $(KEY_FILES)
+	$(CXX) $(CFLAGS) Project5.cpp -o $(TARGET)
 
 clean:
 	rm -f $(TARGET) *.o tests/current/test-*
