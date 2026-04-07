@@ -1,6 +1,6 @@
 # Strix Compiler
 
-Strix is a C++ compiler for a custom language that translates source code into **WebAssembly Text (WAT)**.
+Strix is a C++ compiler for the **Strix language**, a custom language that compiles into **WebAssembly Text (WAT)**.
 
 ## Features
 - Lexer → tokenizes input
